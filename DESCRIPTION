@@ -1,0 +1,18 @@
+Package: sglasso
+Type: Package
+Title: Scaled Group Lasso
+Version: 1.0
+Date: 2025-21-04
+Author: Bahadir Yuzbasi and Jiguo Cao
+Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
+Description: This package integrates the benefits of Ridge, Lasso, and James-Stein estimates, resulting in superior prediction accuracy for feature group selection.
+License: GPL (>= 3)
+Encoding: UTF-8
+Depends: Matrix
+Suggests: 
+    utils,
+    stats,
+    testthat
+Imports: Rcpp (>= 1.0.13)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.3.2
