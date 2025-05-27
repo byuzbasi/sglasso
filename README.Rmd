@@ -1,0 +1,47 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# sglasso
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+This package introduces an innovative approach, called Scaled Group Lasso (SGLASSO), to consider correlations among groups while selecting significant groupings. Also, incorporating group-wise structure into the regression model improves interpretability, reduces overfitting, and clarifies the relationships between different variable groups and the outcome variable using group selection methods.
+
+## Installation
+
+You can install the development version of sglasso like so:
+
+``` r
+# install from GitHub
+devtools::install_github("byuzbasi/sglasso")
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+```{r example}
+library(sglasso)
+data(GenAtHum,package = "sglasso")
+X <- GenAtHum$X
+y <- GenAtHum$y
+group <- GenAtHum$group
+n =  nrow(X)
+p =  ncol(X)
+set.seed(123)
+model_CV <- cv.sglasso(X,y,group, nlambda=20, nd=3, nfolds =5)
+plot(model_CV)
+```

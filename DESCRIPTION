@@ -8,7 +8,9 @@ Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
 Description: This package integrates the benefits of Ridge, Lasso, and James-Stein estimates, resulting in superior prediction accuracy for feature group selection.
 License: GPL (>= 3)
 Encoding: UTF-8
-Depends: Matrix
+Depends: 
+    Matrix,
+    R (>= 3.5)
 Suggests: 
     utils,
     stats,
@@ -18,3 +20,4 @@ LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.3.2
 URL: https://github.com/byuzbasi/sglasso
 BugReports: https://github.com/byuzbasi/sglasso/issues
+LazyData: true
