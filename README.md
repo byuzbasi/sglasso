@@ -6,7 +6,12 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of sglasso is to …
+This package introduces an innovative approach, called Scaled Group
+Lasso (SGLASSO), to consider correlations among groups while selecting
+significant groupings. Also, incorporating group-wise structure into the
+regression model improves interpretability, reduces overfitting, and
+clarifies the relationships between different variable groups and the
+outcome variable using group selection methods.
 
 ## Installation
 
