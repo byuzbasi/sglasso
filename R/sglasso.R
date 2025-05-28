@@ -1,21 +1,32 @@
-#' @title Extract coefficients from a cv. sglasso object.
+#' @title Fit a scaled group lasso regression path
 #' @param object Fitted sglasso object.
 #' @param ... Additional arguments for compatibility.
 
 #' @return A vector of coefficients
 #' 
 #' @description 
-#' Extract coefficients from a sglasso object.
+#' Computes a scaled group lasso regularized linear models. 
 #' 
 #' @seealso 
 #' \code{\link{sglasso}}
 #' 
 #' @examples 
+#'data(GenAtHum,package = "sglasso")
+#'X <- GenAtHum$X
+#'y <- GenAtHum$y
+#'group <- GenAtHum$group
+#'n =  nrow(X)
+#'p =  ncol(X)
+#'set.seed(123)
+#'fit <- sglasso(X,y,group)
+#'coef(fit, type="coef")
 #' data(Birthwt,package = "grpreg")
 #' X <- Birthwt$X
 #' group <- Birthwt$group
 #' Y <- Birthwt$bwt
-#' sglasso(X,Y,group)
+#' fit <- sglasso(X,Y,group)
+#' plot(fit)
+#' select(fit,"EBIC")
 #' @export
 sglasso <- function(X ,Y, group=1:ncol(X), 
                     lambda, nlambda = 50,
