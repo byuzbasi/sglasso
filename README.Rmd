@@ -26,6 +26,7 @@ You can install the development version of sglasso like so:
 
 ``` r
 # install from GitHub
+install.packages("devtools") # if you have not installed "devtools" package
 devtools::install_github("byuzbasi/sglasso")
 ```
 
