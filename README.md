@@ -5,9 +5,10 @@
 
 <!-- badges: start -->
 
-[![GitHub
-version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/byuzbasi/sglasso/master/.version.json&style=flat&logo=github)](https://github.com/byuzbasi/sglasso)
-
+![GitHub
+version](https://img.shields.io/github/v/tag/byuzbasi/sglasso?label=version)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
 This package provides functions for computing a group-wise variable
