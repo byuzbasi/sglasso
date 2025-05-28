@@ -4,14 +4,15 @@
 # sglasso
 
 <!-- badges: start -->
+
+[![GitHub
+version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/byuzbasi/sglasso/master/.version.json&style=flat&logo=github)](https://github.com/byuzbasi/sglasso)
+
 <!-- badges: end -->
 
-This package introduces a group-wise variable selection method, called
-Scaled Group Lasso (SGLASSO), to consider correlations among groups.
-Incorporating group-wise structure into the regression model improves
-interpretability, reduces overfitting, and clarifies the relationships
-between different variable groups and the outcome variable using group
-selection methods.
+This package provides functions for computing a group-wise variable
+selection method, called Scaled Group Lasso (SGLASSO), in the presence
+of correlations among groups.
 
 ## Installation
 
