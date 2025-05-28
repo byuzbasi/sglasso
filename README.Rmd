@@ -46,3 +46,7 @@ set.seed(123)
 model_CV <- cv.sglasso(X,y,group, nlambda=20, nd=3, nfolds =5)
 plot(model_CV)
 ```
+
+# References
+
+1. Yüzbaşı, B and Cao, J. (2025). Collinear Groupwise Selection via Scaled Group Lasso.

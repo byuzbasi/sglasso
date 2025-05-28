@@ -42,3 +42,8 @@ plot(model_CV)
 ```
 
 <img src="man/figures/README-example-1.png" width="100%" />
+
+# References
+
+1.  Yüzbaşı, B and Cao, J. (2025). Collinear Groupwise Selection via
+    Scaled Group Lasso.
