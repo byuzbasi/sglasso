@@ -34,7 +34,7 @@ bool checkConvergence(const arma::colvec& beta_new,
 // Gaussian loss function
 double gLoss(const arma::colvec r, int n) {
   double val = 0;
-  for (arma::uword i=0;i<n;i++) val += pow(r[i],2);
+  for (int i=0;i<n;i++) val += pow(r[i],2);
   return(val);
 }
 
