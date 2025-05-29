@@ -1,11 +1,9 @@
-#BiocManager::install("GEOquery")
-
 chooseCRANmirror(ind=11)
 
 packages <- c("simstudy","data.table","grpnet","sglasso","grpreg","gglasso",
               "caret","dplyr","MASS","glmnet","Metrics","matrixcalc","readr",
               "foreach","doParallel","doFuture","doRNG","mltools","splines",
-              "GEOquery","limma","umap","AnnotationDbi","rat2302.db")
+              "limma","umap")
 
 
 
@@ -56,7 +54,7 @@ registerDoParallel(cores=2)# Shows the number of Parallel Workers to be used
 registerDoRNG(2025)
 # foreach computing
 results_from_foreach <- 
-  foreach(icount(nrep), .combine=rbind) %dopar% {
+  foreach(icount(nrep), .combine=rbind, .packages = c("grpnet","sglasso","grpreg")) %dopar% {
     
   ## define training id
   trainid <- sample.int(n, size = ntrain)
