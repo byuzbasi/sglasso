@@ -22,7 +22,7 @@ Sim_Results <- tibble()
 # To see all results
 Sim_Results
 
-# To see mean
+# To see results in the paper
 options(pillar.sigfig = 4)
 Sim_Results %>% 
   group_by(method) %>% 
