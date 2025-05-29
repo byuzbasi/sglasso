@@ -49,9 +49,15 @@ alpha_seq <- seq(0.1,0.9,length=5)
 l_alphas <- length(alpha_seq)
 
 
+# Detect number of available cores in your computer/server
+# detectCores()
+
+# Decide how many core will you use for the application
+number_cores <- 5
+
 # pleminaries for foreach
-registerDoParallel(cores=2)# Shows the number of Parallel Workers to be used
-registerDoRNG(2025)
+registerDoParallel(cores = number_cores)# Shows the number of Parallel Workers to be used
+registerDoRNG(2025) # This ensures you get the same results with the paper.
 # foreach computing
 results_from_foreach <- 
   foreach(icount(nrep), .combine=rbind, .packages = c("grpnet","sglasso","grpreg")) %dopar% {

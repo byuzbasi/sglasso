@@ -1,4 +1,4 @@
-##########################################################
+################################################################################
 library("grpreg")
 data(Birthwt,package = "grpreg")
 X <- Birthwt$X
@@ -9,19 +9,27 @@ group <- rep(1:length(K),K)
 n <- nrow(X)
 p <- ncol(X)
 #length(group) == p # check
-#################
+################################################################################
 
 
+################################################################################
+# This may take some time depending on the replication number.
 replication_number = c(100) # In the paper, replication_number = c(100)
 Sim_Results <- tibble()
   tryCatch({
     # Get Each Results
     Sim_Results = real_sglasso(X,y,group,n,replication_number)
   }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
+################################################################################
 
+
+################################################################################
 # To see all results
 Sim_Results
+################################################################################
 
+
+################################################################################
 # To see results in the paper
 options(pillar.sigfig = 4)
 Sim_Results %>% 
@@ -32,7 +40,7 @@ Sim_Results %>%
   mutate(RPE = mse/mse[3]) %>%
   dplyr::select(c("method","time","iter","PE","RPE"))%>% 
   dplyr::slice(c(3, 1, 2, 4, 5))
-
+################################################################################
 
 
 
