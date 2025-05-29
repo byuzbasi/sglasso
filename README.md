@@ -38,12 +38,18 @@ y <- GenAtHum$y
 group <- GenAtHum$group
 n =  nrow(X)
 p =  ncol(X)
-set.seed(123)
-model_CV <- cv.sglasso(X,y,group, nlambda=20, nd=3, nfolds =5)
+set.seed(2025)
+model_CV <- cv.sglasso(X,y,group, nlambda=20, nd= 5, nfold = 5, alpha = 0.4)
 plot(model_CV)
 ```
 
 <img src="man/figures/README-example-1.png" width="100%" />
+
+``` r
+plot(model_CV,type.tun = "d")
+```
+
+<img src="man/figures/README-example-2.png" width="100%" />
 
 # References
 
