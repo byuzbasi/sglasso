@@ -27,7 +27,7 @@ devtools::install_github("byuzbasi/sglasso")
 
 If you get a error about gfortran, you can visit the page to fix in
 [gfortran installation
-guide](docs/help/gfortran_installation_guide.html).
+guide](https://byuzbasi.github.io/sglasso/gfortran_installation_guide.html).
 
 ## Example
 
