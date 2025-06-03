@@ -3,8 +3,12 @@
 title: "Installing gfortran for R Package Compilation (Windows & macOS)"
 author: "Bahadir Yuzbasi"
 date: "`r Sys.Date()`"
-output:
-  html_document: default
+output: 
+  html_document:
+    self_contained: true
+knit:
+  rmarkdown::render
+output_dir: "docs/help"
 ---
 
 # Introduction
