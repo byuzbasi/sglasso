@@ -102,5 +102,5 @@ select(fit,"EBIC")
 \code{\link{cv.sglasso}}
 }
 \author{
-Bahadir Yuzbasi
+Bahadir Yuzbasi and Jiguo Cao
 }

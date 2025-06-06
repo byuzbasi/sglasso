@@ -50,7 +50,7 @@
 #' }
 #' 
 #' 
-#' @author Bahadir Yuzbasi
+#' @author Bahadir Yuzbasi and Jiguo Cao
 #' 
 #' @seealso 
 #' \code{\link{cv.sglasso}}
