@@ -2,14 +2,14 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 std_c <- function(x) {
-    .Call(`_sglasso_std_c`, x)
+    .Call('_sglasso_std_c', PACKAGE = 'sglasso', x)
 }
 
 lambda_max_c <- function(Xtilde, Ytilde, K, K1) {
-    .Call(`_sglasso_lambda_max_c`, Xtilde, Ytilde, K, K1)
+    .Call('_sglasso_lambda_max_c', PACKAGE = 'sglasso', Xtilde, Ytilde, K, K1)
 }
 
 gd_sglasso_ssr <- function(Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax) {
-    .Call(`_sglasso_gd_sglasso_ssr`, Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax)
+    .Call('_sglasso_gd_sglasso_ssr', PACKAGE = 'sglasso', Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax)
 }
 
