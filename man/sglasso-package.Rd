@@ -3,9 +3,9 @@
 \docType{package}
 \name{sglasso-package}
 \alias{sglasso-package}
-\title{sglasso}
+\title{sglasso: Scaled Group Lasso}
 \description{
-Scaled group lasso methods.
+Tools for scaled group lasso estimation and cross-validation.
 }
 \seealso{
 Useful links:
@@ -15,3 +15,4 @@ Useful links:
 }
 
 }
+\keyword{internal}

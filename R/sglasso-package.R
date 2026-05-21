@@ -1,10 +1,7 @@
-#' sglasso
+#' sglasso: Scaled Group Lasso
 #'
-#' Scaled group lasso methods.
+#' Tools for scaled group lasso estimation and cross-validation.
 #'
-#' @useDynLib sglasso, .registration = TRUE
-#' @importFrom Rcpp sourceCpp
-#' @importFrom graphics abline arrows axis mtext points
-#' @importFrom stats AIC BIC approx coef glm logLik model.matrix predict relevel sd
-#' @importFrom Matrix bdiag
+#' @keywords internal
+#' @name sglasso-package
 "_PACKAGE"
