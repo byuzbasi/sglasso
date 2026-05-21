@@ -38,7 +38,7 @@ predict.sglasso <- function(
   
   if (length(object$lambda) == 1 && length(object$d) == 1) {
     
-    beta <- object$beta
+    beta <- object$betas
     
     if (length(dim(beta)) == 3) {
       beta <- beta[, 1, 1]
