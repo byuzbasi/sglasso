@@ -1,7 +1,12 @@
-#' logLik method for sglasso
-#' @method logLik sglasso
+#' Log-likelihood for sglasso
+#'
+#' @param object A fitted \code{sglasso} object.
+#' @param ... Additional arguments.
+#'
+#' @return Log-likelihood value.
+#'
 #' @export
-logLik.sglasso <- function(object) {
+logLik.sglasso <- function(object, ...) {
   n <- as.integer(object$n)
   df <- object$df
   RSS <- object$deviance

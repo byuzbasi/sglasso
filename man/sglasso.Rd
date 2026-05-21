@@ -15,7 +15,7 @@ sglasso(
   alpha = 0.5,
   beta_start = NULL,
   family = "gaussian",
-  bilevel = F,
+  bilevel = FALSE,
   max_iter = 1e+08,
   eps = 1e-04,
   lambda.min = 0.005,
@@ -26,6 +26,8 @@ sglasso(
 \arguments{
 \item{X}{The design matrix, without an intercept.  \code{sglasso}
 standardizes the data and includes an intercept by default.}
+
+\item{Y}{The response vector.}
 
 \item{group}{A vector describing the grouping of the coefficients.}
 
@@ -42,9 +44,14 @@ of lambda values.}
 
 \item{alpha}{Elastic Net tuning constant: the value must be between 0 and 1. Default is 0.5.}
 
+\item{beta_start}{Optional initial coefficient vector.}
+
 \item{family}{is "gaussian", not other option at this moment, depending on the response.}
 
 \item{bilevel}{bi-level selection is not supported at this moment.}
+
+\item{max_iter}{Maximum number of iterations
+Default is 1e+08.}
 
 \item{eps}{Convergence threshhold.  The algorithm iterates until the BCD
 for the change in linear predictors for each coefficient is less than
@@ -60,11 +67,6 @@ regularization path.}
 \item{gmax}{Limit on the number of groups allowed to have nonzero elements.
 If this limit is exceeded, the algorithm will exit early from the
 regularization path.}
-
-\item{y}{The response vector}
-
-\item{max.iter}{Maximum number of iterations (total across entire path).
-Default is 1e+08.}
 }
 \value{
 An object with S3 class \code{"sglasso"} containing:

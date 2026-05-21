@@ -1,8 +1,16 @@
-#' Extract coefficients from a sglasso object
+#' Extract coefficients from a fitted sglasso object
 #'
-#' @method coef sglasso
+#' @param object A fitted \code{sglasso} object.
+#' @param lambda Lambda values for coefficient extraction.
+#' @param d Scaling parameter values.
+#' @param which Indices of lambda values.
+#' @param drop Logical; should singleton dimensions be dropped?
+#' @param ... Additional arguments for compatibility.
+#'
+#' @return Estimated coefficient array or matrix.
+#'
 #' @export
-coef.sglasso <- function(object, lambda, d, which=1:length(object$lambda), drop=TRUE) {
+coef.sglasso <- function(object, lambda, d, which=1:length(object$lambda), drop=TRUE, ...) {
   if (any(lambda > max(object$lambda) | lambda < min(object$lambda))) stop('lambda must lie within the range of the fitted coefficient path', call.=FALSE)
   if (any(d > max(object$d) | d < min(object$d))) stop('lambda must lie within the range of the fitted coefficient path', call.=FALSE)
   ind_l <- approx(object$lambda, seq(object$lambda), lambda)$y

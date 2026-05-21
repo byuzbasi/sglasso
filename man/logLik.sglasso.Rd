@@ -2,10 +2,18 @@
 % Please edit documentation in R/logLik.R
 \name{logLik.sglasso}
 \alias{logLik.sglasso}
-\title{logLik method for sglasso}
+\title{Log-likelihood for sglasso}
 \usage{
-\method{logLik}{sglasso}(object)
+\method{logLik}{sglasso}(object, ...)
+}
+\arguments{
+\item{object}{A fitted \code{sglasso} object.}
+
+\item{...}{Additional arguments.}
+}
+\value{
+Log-likelihood value.
 }
 \description{
-logLik method for sglasso
+Log-likelihood for sglasso
 }

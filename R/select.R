@@ -1,13 +1,22 @@
-#' @rdname select
-#' @export
-select <- function(obj,...) UseMethod("select")
-
-
-#' Extract coefficients from a sglasso object
+#' Select tuning parameters
 #'
-#' @method select sglasso
+#' @param obj An object.
+#' @param ... Additional arguments.
+#'
 #' @export
-select.sglasso <- function(obj, criterion=c("BIC","AIC","GCV","AICc","EBIC")) {
+select <- function(obj, ...) {
+  UseMethod("select")
+}
+
+
+#' Select tuning parameters for sglasso
+#'
+#' @param obj A fitted \code{sglasso} object.
+#' @param criterion Selection criterion.
+#' @param ... Additional arguments.
+#'
+#' @export
+select.sglasso <- function(obj, criterion = c("AIC", "BIC", "EBIC"), ...) {
   criterion <- match.arg(criterion)
   length_lambda <- length(obj$lambda)
   length_d <- length(obj$d)

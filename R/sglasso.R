@@ -6,7 +6,7 @@
 #' 
 #' @param X The design matrix, without an intercept.  \code{sglasso}
 #' standardizes the data and includes an intercept by default.
-#' @param y The response vector
+#' @param Y The response vector.
 #' @param group A vector describing the grouping of the coefficients.
 #' @param family is "gaussian", not other option at this moment, depending on the response.
 #' @param bilevel bi-level selection is not supported at this moment.
@@ -20,10 +20,11 @@
 #' @param alpha Elastic Net tuning constant: the value must be between 0 and 1. Default is 0.5.
 #' @param lambda.min The smallest value for \code{lambda}, as a fraction of
 #' \code{lambda.max}.  Default is .0005.
+#' @param beta_start Optional initial coefficient vector.
 #' @param eps Convergence threshhold.  The algorithm iterates until the BCD
 #' for the change in linear predictors for each coefficient is less than
 #' \code{eps}.  Default is \code{1e-4}.  
-#' @param max.iter Maximum number of iterations (total across entire path).
+#' @param max_iter Maximum number of iterations
 #' Default is 1e+08.
 #' @param dfmax Limit on the number of parameters allowed to be nonzero.  If
 #' this limit is exceeded, the algorithm will exit early from the
@@ -71,7 +72,7 @@ sglasso <- function(X ,Y, group=1:ncol(X),
                     d, nd = 11,  
                     alpha = 0.5, 
                     beta_start= NULL,
-                    family= "gaussian", bilevel = F, max_iter=1e+08, eps = 1e-04,
+                    family = "gaussian", bilevel = FALSE, max_iter=1e+08, eps = 1e-04,
                     lambda.min = 0.005,
                     dfmax=p, gmax=length(unique(group))){
   ###
@@ -129,7 +130,7 @@ sglasso <- function(X ,Y, group=1:ncol(X),
   ####################################################################################
   
   #[ToDo]  Check for starting point beta_start. If none supplied, initialize with a vector of zeros. If supplied, check for compatibility with Xtilde in terms of p
-  if(length(beta_start) == 0){
+  if (is.null(beta_start)){
     beta_start = rep(0, p)
   }else{
     if(length(beta_start) != p){

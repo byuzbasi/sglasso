@@ -2,10 +2,17 @@
 % Please edit documentation in R/select.R
 \name{select.sglasso}
 \alias{select.sglasso}
-\title{Extract coefficients from a sglasso object}
+\title{Select tuning parameters for sglasso}
 \usage{
-\method{select}{sglasso}(obj, criterion = c("BIC", "AIC", "GCV", "AICc", "EBIC"))
+\method{select}{sglasso}(obj, criterion = c("AIC", "BIC", "EBIC"), ...)
+}
+\arguments{
+\item{obj}{A fitted \code{sglasso} object.}
+
+\item{criterion}{Selection criterion.}
+
+\item{...}{Additional arguments.}
 }
 \description{
-Extract coefficients from a sglasso object
+Select tuning parameters for sglasso
 }

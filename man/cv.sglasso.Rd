@@ -2,7 +2,7 @@
 % Please edit documentation in R/cv.sglasso.R
 \name{cv.sglasso}
 \alias{cv.sglasso}
-\title{Extract coefficients from a cv.sglasso object.}
+\title{Cross-validation for scaled group lasso}
 \usage{
 cv.sglasso(
   X,
@@ -17,28 +17,59 @@ cv.sglasso(
   fold,
   beta_start = NULL,
   family = "gaussian",
-  bilevel = F,
+  bilevel = FALSE,
   max_iter = 1e+08,
-  eps = 1e-04
+  eps = 1e-04,
+  ...
 )
 }
 \arguments{
-\item{object}{Fitted cv.sglasso object.}
+\item{X}{Design matrix.}
 
-\item{...}{Additional arguments for compatibility.}
+\item{Y}{Response vector.}
+
+\item{group}{Group membership vector.}
+
+\item{lambda}{Optional lambda sequence.}
+
+\item{nlambda}{Number of lambda values.}
+
+\item{d}{Optional d sequence.}
+
+\item{nd}{Number of d values.}
+
+\item{alpha}{Mixing parameter.}
+
+\item{nfolds}{Number of cross-validation folds.}
+
+\item{fold}{Optional fold assignment vector.}
+
+\item{beta_start}{Optional initial coefficient vector.}
+
+\item{family}{Model family. Currently "gaussian".}
+
+\item{bilevel}{Logical; whether bilevel selection is used.}
+
+\item{max_iter}{Maximum number of iterations.}
+
+\item{eps}{Convergence tolerance.}
+
+\item{...}{Additional arguments.}
 }
 \value{
-An object of class cv.sglasso, a list with entries
+An object of class \code{cv.sglasso}.
 }
 \description{
-Extract coefficients from a cv.sglasso object.
+Performs K-fold cross-validation for the scaled group lasso over a grid of
+lambda and d values.
 }
 \examples{
-data(Birthwt,package = "grpreg")
+data(Birthwt, package = "grpreg")
 X <- Birthwt$X
 group <- Birthwt$group
 Y <- Birthwt$bwt
-CVsglasso_fit <- cv.sglasso(X,Y,group)
+CVsglasso_fit <- cv.sglasso(X, Y, group)
+
 }
 \seealso{
 \code{\link{sglasso}}

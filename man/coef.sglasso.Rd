@@ -2,10 +2,26 @@
 % Please edit documentation in R/coef.sglasso.R
 \name{coef.sglasso}
 \alias{coef.sglasso}
-\title{Extract coefficients from a sglasso object}
+\title{Extract coefficients from a fitted sglasso object}
 \usage{
-\method{coef}{sglasso}(object, lambda, d, which = 1:length(object$lambda), drop = TRUE)
+\method{coef}{sglasso}(object, lambda, d, which = 1:length(object$lambda), drop = TRUE, ...)
+}
+\arguments{
+\item{object}{A fitted \code{sglasso} object.}
+
+\item{lambda}{Lambda values for coefficient extraction.}
+
+\item{d}{Scaling parameter values.}
+
+\item{which}{Indices of lambda values.}
+
+\item{drop}{Logical; should singleton dimensions be dropped?}
+
+\item{...}{Additional arguments for compatibility.}
+}
+\value{
+Estimated coefficient array or matrix.
 }
 \description{
-Extract coefficients from a sglasso object
+Extract coefficients from a fitted sglasso object
 }
