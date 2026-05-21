@@ -18,7 +18,7 @@ sglasso(
   bilevel = FALSE,
   max_iter = 1e+08,
   eps = 1e-04,
-  lambda.min = 0.005,
+  lambda.min.ratio = 0.005,
   dfmax = p,
   gmax = length(unique(group))
 )
@@ -57,7 +57,7 @@ Default is 1e+08.}
 for the change in linear predictors for each coefficient is less than
 \code{eps}.  Default is \code{1e-4}.}
 
-\item{lambda.min}{The smallest value for \code{lambda}, as a fraction of
+\item{lambda.min.ratio}{The smallest value for \code{lambda}, as a fraction of
 \code{lambda.max}.  Default is .0005.}
 
 \item{dfmax}{Limit on the number of parameters allowed to be nonzero.  If
@@ -97,7 +97,7 @@ group <- GenAtHum$group
 n =  nrow(X)
 p =  ncol(X)
 set.seed(123)
-fit <- sglasso(X,y,group, nlambda = 20, nd = 3)
+fit <- sglasso(X = X, Y = y, group = group, nlambda = 20, nd = 3)
 select(fit,"EBIC")
 }
 \seealso{

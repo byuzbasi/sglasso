@@ -18,7 +18,7 @@
 #' @param nd The number of \code{d} values.  Default is 11.
 #' @param d The scale parameter between 0 and 1.
 #' @param alpha Elastic Net tuning constant: the value must be between 0 and 1. Default is 0.5.
-#' @param lambda.min The smallest value for \code{lambda}, as a fraction of
+#' @param lambda.min.ratio The smallest value for \code{lambda}, as a fraction of
 #' \code{lambda.max}.  Default is .0005.
 #' @param beta_start Optional initial coefficient vector.
 #' @param eps Convergence threshhold.  The algorithm iterates until the BCD
@@ -64,7 +64,7 @@
 #' n =  nrow(X)
 #' p =  ncol(X)
 #' set.seed(123)
-#' fit <- sglasso(X,y,group, nlambda = 20, nd = 3)
+#' fit <- sglasso(X = X, Y = y, group = group, nlambda = 20, nd = 3)
 #' select(fit,"EBIC")
 #' @export
 sglasso <- function(X ,Y, group=1:ncol(X), 
@@ -73,7 +73,7 @@ sglasso <- function(X ,Y, group=1:ncol(X),
                     alpha = 0.5, 
                     beta_start= NULL,
                     family = "gaussian", bilevel = FALSE, max_iter=1e+08, eps = 1e-04,
-                    lambda.min = 0.005,
+                    lambda.min.ratio = 0.005,
                     dfmax=p, gmax=length(unique(group))){
   ###
   ##############################################################################
@@ -104,7 +104,7 @@ sglasso <- function(X ,Y, group=1:ncol(X),
   
   ###
   if (missing(lambda)) {
-    lambda_values <- lambda_sglasso(Xtilde$X,Ytilde,group,alpha,lambda.min,nlambda)
+    lambda_values <- lambda_sglasso(Xtilde$X,Ytilde,group,alpha,lambda.min.ratio,nlambda)
     lambda <- lambda_values[[1]]
     lambda_max <- lambda_values[[2]]
     user.lambda <- FALSE
