@@ -1,3 +1,14 @@
+#' Select tuning parameters
+#'
+#' @param obj An object.
+#' @param ... Additional arguments.
+#'
+#' @export
+select <- function(obj, ...) {
+  UseMethod("select")
+}
+
+
 #' Select tuning parameters for sglasso
 #'
 #' @param obj A fitted \code{sglasso} object.
