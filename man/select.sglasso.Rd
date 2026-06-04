@@ -4,12 +4,26 @@
 \alias{select.sglasso}
 \title{Select tuning parameters for sglasso}
 \usage{
-\method{select}{sglasso}(obj, criterion = c("AIC", "BIC", "EBIC"), ...)
+\method{select}{sglasso}(
+  obj,
+  criterion = c("AIC", "BIC", "EBIC", "GCV", "AICc"),
+  ebic_gamma = 0.5,
+  ebic_level = c("group", "feature"),
+  tol = 1e-08,
+  ...
+)
 }
 \arguments{
 \item{obj}{A fitted \code{sglasso} object.}
 
 \item{criterion}{Selection criterion.}
+
+\item{ebic_gamma}{EBIC gamma parameter. Default is 0.5.}
+
+\item{ebic_level}{EBIC penalty level. Use \code{"group"} for group-level
+EBIC or \code{"feature"} for feature-level EBIC.}
+
+\item{tol}{Tolerance used to determine nonzero coefficients.}
 
 \item{...}{Additional arguments.}
 }

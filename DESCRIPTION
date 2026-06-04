@@ -1,7 +1,7 @@
 Package: sglasso
 Type: Package
 Title: Scaled Group Lasso
-Version: 1.1.6
+Version: 1.1.7
 Date: 2025-04-21
 Author: Bahadir Yuzbasi and Jiguo Cao
 Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
