@@ -1,14 +1,3 @@
-#' Select tuning parameters
-#'
-#' @param obj An object.
-#' @param ... Additional arguments.
-#'
-#' @export
-select <- function(obj, ...) {
-  UseMethod("select")
-}
-
-
 #' Select tuning parameters for sglasso
 #'
 #' @param obj A fitted \code{sglasso} object.
@@ -34,7 +23,16 @@ select.sglasso <- function(obj,
   length_d <- length(obj$d)
   
   ll <- logLik(obj)
-  df <- as.double(attr(ll, "df"))
+  df <- as.numeric(attr(ll, "df"))
+  ll_num <- as.numeric(ll)
+  
+  if (length(ll_num) != length_lambda * length_d) {
+    stop("logLik length does not match lambda-by-d grid.")
+  }
+  
+  if (length(df) != length_lambda * length_d) {
+    stop("df length does not match lambda-by-d grid.")
+  }
   
   d_obj <- dim(obj$betas)
   p <- d_obj[1] - 1
@@ -42,25 +40,52 @@ select.sglasso <- function(obj,
   IC <- switch(
     criterion,
     
-    AIC = AIC(ll),
+    AIC = {
+      matrix(
+        AIC(ll),
+        nrow = length_lambda,
+        ncol = length_d,
+        byrow = FALSE
+      )
+    },
     
-    BIC = BIC(ll),
+    BIC = {
+      matrix(
+        BIC(ll),
+        nrow = length_lambda,
+        ncol = length_d,
+        byrow = FALSE
+      )
+    },
     
-    GCV = matrix(
-      (1 / obj$n) * (-2) * as.double(ll) /
-        pmax((1 - df / obj$n)^2, .Machine$double.eps),
-      length_lambda,
-      length_d,
-      byrow = FALSE
-    ),
+    GCV = {
+      gcv_vec <- (-2 * ll_num / obj$n) /
+        pmax((1 - df / obj$n)^2, .Machine$double.eps)
+      
+      matrix(
+        gcv_vec,
+        nrow = length_lambda,
+        ncol = length_d,
+        byrow = FALSE
+      )
+    },
     
-    AICc = AIC(ll) +
-      2 * df * (df + 1) /
-      pmax(obj$n - df - 1, .Machine$double.eps),
+    AICc = {
+      aicc_vec <- as.numeric(AIC(ll)) +
+        2 * df * (df + 1) /
+        pmax(obj$n - df - 1, .Machine$double.eps)
+      
+      matrix(
+        aicc_vec,
+        nrow = length_lambda,
+        ncol = length_d,
+        byrow = FALSE
+      )
+    },
     
     EBIC = {
       
-      base_bic <- BIC(ll)
+      base_bic <- as.numeric(BIC(ll))
       
       if (ebic_level == "feature") {
         
@@ -101,9 +126,18 @@ select.sglasso <- function(obj,
         )
       }
       
-      base_bic + ebic_penalty
+      ebic_vec <- base_bic + as.numeric(ebic_penalty)
+      
+      matrix(
+        ebic_vec,
+        nrow = length_lambda,
+        ncol = length_d,
+        byrow = FALSE
+      )
     }
   )
+  
+  IC[!is.finite(IC)] <- Inf
   
   min_ind <- which(IC == min(IC, na.rm = TRUE), arr.ind = TRUE)
   

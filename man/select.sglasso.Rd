@@ -4,7 +4,7 @@
 \alias{select.sglasso}
 \title{Select tuning parameters for sglasso}
 \usage{
-\method{select}{sglasso}(
+select.sglasso(
   obj,
   criterion = c("AIC", "BIC", "EBIC", "GCV", "AICc"),
   ebic_gamma = 0.5,
