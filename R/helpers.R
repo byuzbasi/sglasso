@@ -7,7 +7,8 @@
 ## and hence are not exported into the global environment.
 ## The original comments and header are preserved.
 newXG <- function(X, g, m, ncolY, bilevel) {
-  # Coerce X to matrix
+  # Prepare the predictor matrix and keep the bookkeeping needed to map
+  # solver coefficients back to the user's original column order and scale.
   if (!inherits(X, "matrix")) {
     tmp <- try(X <- model.matrix(~0+., data=X), silent=TRUE)
     if (inherits(tmp, "try-error")) stop("X must be a matrix or able to be coerced to a matrix", call.=FALSE)
@@ -17,10 +18,10 @@ newXG <- function(X, g, m, ncolY, bilevel) {
   if (length(g) != ncol(X)) stop ("Dimensions of group is not compatible with X", call.=FALSE)
   xnames <- if (is.null(colnames(X))) paste("V", 1:ncol(X), sep="") else colnames(X)
   
-  # Setup group
+  # Normalize the supplied group labels before any column filtering/reordering.
   G <- setupG(g, m, bilevel)
   
-  # Reconfigure for multiple outcomes, if necessary
+  # Reconfigure for multiple outcomes, if necessary.
   if (ncolY > 1) {
     X <- multiX(X, ncolY)
     G <- multiG(G, ncolY)
@@ -28,7 +29,8 @@ newXG <- function(X, g, m, ncolY, bilevel) {
   
   #.Call("std_c",X)
   
-  # Feature-level standardization
+  # Feature-level standardization is performed before the C++ solver. Constant
+  # columns are dropped here and later restored as zero coefficients.
   std <- std_c(X)
   XX <- std[[1]]
   center <- std[[2]]
@@ -39,11 +41,13 @@ newXG <- function(X, g, m, ncolY, bilevel) {
     G <- subsetG(G, nz)
   }
   
-  # Reorder groups, if necessary
+  # Reorder columns so each group is contiguous, matching the block-coordinate
+  # updates used by the solver.
   G <- reorderG(G, attr(G, 'm'), bilevel)
   if (attr(G, 'reorder')) XX <- XX[, attr(G, 'ord')]
   
-  # Group-level standardization
+  # Group-level standardization uses an orthogonalized design for group lasso
+  # fits; bilevel fits keep the feature-level representation.
   if (!bilevel) {
     XX <- orthogonalize(XX, G)
     g <- attr(XX, "group")
@@ -51,17 +55,19 @@ newXG <- function(X, g, m, ncolY, bilevel) {
     g <- as.integer(G)
   }
   
-  # Set group multiplier if missing
+  # Set group multiplier if missing.
   m <- attr(G, 'm')
   if (all(is.na(m))) {
     m <- if (bilevel) rep(1, max(g)) else sqrt(table(g[g!=0]))
   }
   
-  # Return
+  # Return both transformed design data and inverse-transform metadata.
   return(list(X=XX, g=g, m=m, reorder=attr(G, 'reorder'), ord.inv=attr(G, 'ord.inv'), names=xnames,
               center=center, scale=scale, nz=nz))
 }
-###
+
+# Convert user group labels to compact integer labels and validate optional
+# group multipliers.
 setupG <- function(group, m, bilevel) {
   gf <- factor(group)
   if (any(levels(gf)=='0')) {
@@ -87,6 +93,9 @@ setupG <- function(group, m, bilevel) {
   }
   structure(g, levels=lev, m=m)
 }
+
+# Drop group labels/multipliers for columns removed during standardization and
+# renumber the remaining groups.
 subsetG <- function(g, nz) {
   lev <- attr(g, 'levels')
   m <- attr(g, 'm')
@@ -100,6 +109,9 @@ subsetG <- function(g, nz) {
   }
   structure(new, levels=lev, m=m)
 }
+
+# Put columns belonging to the same group next to one another and store the
+# inverse order so coefficients can be returned in the original order.
 reorderG <- function(g, m, bilevel) {
   og <- g
   lev <- attr(g, 'levels')
@@ -125,7 +137,9 @@ reorderG <- function(g, m, bilevel) {
   }
   structure(g, levels=lev, m=m, ord=ord, ord.inv=ord.inv, reorder=reorder)
 }
-####
+
+# Validate and center the response. The Gaussian solver works with centered y
+# and stores the mean so the intercept can be reconstructed later.
 newY <- function(y, family) {
   if (is.data.frame(y)) y <- as.matrix(y)
   if (is.matrix(y)) {
@@ -168,7 +182,9 @@ newY <- function(y, family) {
   attr(y, "m") <- d[2]
   y
 }
-###
+
+# Orthogonalize each penalized group with an SVD transform. This improves the
+# group update geometry and records the transform for coefficient recovery.
 orthogonalize <- function(X, group) {
   n <- nrow(X)
   J <- max(group)
@@ -189,6 +205,9 @@ orthogonalize <- function(X, group) {
   attr(XX, "group") <- group[nz]
   XX
 }
+
+# Map coefficients from the orthogonalized basis back to the standardized
+# feature basis.
 unorthogonalize <- function(b, XX, group, intercept=TRUE) {
   ind <- !sapply(attr(XX, "T"), is.null)
   T <- bdiag(attr(XX, "T")[ind])
@@ -202,11 +221,12 @@ unorthogonalize <- function(b, XX, group, intercept=TRUE) {
     val <- as.matrix(T %*% b)
   }
 }
-####
+
+# Undo feature-level standardization and reconstruct the intercept on the
+# original data scale.
 unstandardize <- function(b, XG) {
   beta <- matrix(0, nrow=1+length(XG$scale), ncol=ncol(b))
   beta[1 + XG$nz,] <- b[-1,] / XG$scale[XG$nz]
   beta[1,] <- b[1,] - crossprod(XG$center, beta[-1, , drop=FALSE])
   beta
 }
-

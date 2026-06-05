@@ -1,6 +1,7 @@
 #' @export
 plot.cv.sglasso <- function(x, log.l = TRUE, col = "red", selected = TRUE, ...) {
   
+  # Plot the lambda path on the same scale used for model selection.
   l <- x$lambda
   
   if (log.l) {
@@ -10,6 +11,7 @@ plot.cv.sglasso <- function(x, log.l = TRUE, col = "red", selected = TRUE, ...) 
     xlab <- expression(lambda)
   }
   
+  # The d dimension is fixed at the cross-validated optimum for this curve.
   cve <- x$cve[, x$min_ind[2]]
   cvse <- x$cvse[, x$min_ind[2]]
   
@@ -47,9 +49,8 @@ plot.cv.sglasso <- function(x, log.l = TRUE, col = "red", selected = TRUE, ...) 
   
   points(l[ind], cve[ind], col = col, pch = 19, cex = 0.6)
   
-  # ============================================================
-  # GROUPS (NO predict!)
-  # ============================================================
+  # Read selected-group counts directly from the coefficient path to avoid
+  # requiring new prediction data.
   
   if (selected) {
     
@@ -60,8 +61,16 @@ plot.cv.sglasso <- function(x, log.l = TRUE, col = "red", selected = TRUE, ...) 
     }
     
     beta <- beta[-1, , drop = FALSE]
-    
-    n.s <- apply(beta != 0, 2, sum)
+    support <- beta != 0
+
+    if (!is.null(x$fit$group) && length(x$fit$group) == nrow(support)) {
+      group <- x$fit$group
+      n.s <- apply(support, 2, function(active) {
+        length(unique(group[active]))
+      })
+    } else {
+      n.s <- apply(support, 2, sum)
+    }
     
     axis(
       3,

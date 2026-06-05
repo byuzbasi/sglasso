@@ -11,31 +11,25 @@ using namespace std;
 bool checkConvergence(const arma::colvec& beta_new, 
                       const arma::colvec& beta_old, 
                       const double& eps,
-                      const double& J) {
-  bool converged = true;
-  for (arma::uword j=0; j < J; j++) {
+                      const arma::uword& p) {
+  for (arma::uword j=0; j < p; j++) {
     if (beta_new[j]!=0 && beta_old[j]!=0) {
       if (abs(beta_new[j]-beta_old[j]) > eps) {
         return(false);
-        break;
       }
     } else if (beta_new[j]==0 && beta_old[j]!=0) {
       return(false);
-      break;
     } else if (beta_new[j]!=0 && beta_old[j]==0) {
       return(false);
-      break;
     }
   }
-  return(converged);
+  return(true);
 }
 
 
 // Gaussian loss function
-double gLoss(const arma::colvec r, int n) {
-  double val = 0;
-  for (int i=0;i<n;i++) val += pow(r[i],2);
-  return(val);
+double gLoss(const arma::colvec& r, int n) {
+  return arma::dot(r, r);
 }
 
 // standardize
@@ -55,7 +49,11 @@ List std_c(const arma::mat & x){
     xx.col(j) = x.col(j) - c[j];
     er = dot(xx.col(j),xx.col(j))/n;
     s[j] = sqrt(er);
-    xx.col(j) /= s[j];
+    if (s[j] > 1e-6) {
+      xx.col(j) /= s[j];
+    } else {
+      xx.col(j).zeros();
+    }
   }
   output["xx"] = xx;
   output["c"] = c;
@@ -97,7 +95,7 @@ double loss_c(const arma::mat& Xtilde,
   double pen=0;
   for(int g = 0; g < J; g++){
     for(int j = K1[g]; j < K1[g+1]; j++){
-   pen =  pen + lambda*gm[g]*alpha+abs(beta[j]) + .5*lambda*gm[g]*(1-alpha)*pow((beta[j]-d*beta_lse[j]),2);
+   pen =  pen + lambda*gm[g]*alpha*abs(beta[j]) + .5*lambda*gm[g]*(1-alpha)*pow((beta[j]-d*beta_lse[j]),2);
     }
   }
   return accu(square(Y - X * param)/(2 * n)) + pen;
@@ -141,15 +139,15 @@ void ssr_sglasso(const arma::colvec& K,
                 const double alpha,
                 const double n,
                 const double J,
-                const arma::colvec& beta_new,
                 arma::colvec& xTr,
                 arma::colvec& ever_strong) {
   for(int g = 0; g < J; g++){
-    arma::colvec z = colvec(K[g], fill::zeros);
-    for(int j = K1[g]; j < K1[g+1]; j++){
-      z[j-K1[g]] =  arma::as_scalar(Xtilde.col(j).t() * r / n);
+    double z_norm_sq = 0;
+    for(arma::uword j = K1[g]; j < K1[g+1]; j++){
+      double z = arma::dot(Xtilde.col(j), r) / n;
+      z_norm_sq += z * z;
     }
-    xTr[g] = norm(z,2);
+    xTr[g] = std::sqrt(z_norm_sq);
     double cutoff;
     double TOLERANCE = 1e-8;
     if (l_indx != 0) {
@@ -181,6 +179,7 @@ bool Check_Rest_Set(const arma::mat& Xtilde,
                     const double& n, 
                     const double& J, 
                     const arma::colvec& gm,
+                    const arma::colvec& xty,
                     const arma::colvec& beta_new,
                     arma::colvec& xTr,
                     arma::colvec& ever_strong, 
@@ -191,18 +190,16 @@ bool Check_Rest_Set(const arma::mat& Xtilde,
   for(arma::uword g = 0; g < J; g++){
     double lambda2 = lambda_val * gm[g] * (1-alpha);
     if(ever_strong[g] == 0){
-      arma::colvec z = colvec(K[g], fill::zeros);
-      arma::colvec LZ = colvec(K[g], fill::zeros);
-      arma::colvec beta_ols_g = colvec(K[g], fill::zeros);
+      double LZ_norm_sq = 0;
       for(arma::uword j = K1[g]; j < K1[g+1]; j++){
-        z[j-K1[g]] =  arma::as_scalar(Xtilde.col(j).t() * r / n);
-        beta_ols_g[j-K1[g]] = arma::as_scalar(Xtilde.col(j).t() * Ytilde / n);
-        LZ[j-K1[g]] = z[j-K1[g]] + lambda2*(d_val*beta_ols_g[j-K1[g]] - beta_new[j-K1[g]]);
+        double z = arma::dot(Xtilde.col(j), r) / n;
+        double LZ = z + lambda2 * (d_val * xty[j] - beta_new[j]);
+        LZ_norm_sq += LZ * LZ;
       }
-      xTr[g] = norm(LZ,2);
+      xTr[g] = std::sqrt(LZ_norm_sq);
       if (xTr[g]  +  TOLERANCE > alpha * lambda_val * gm[g]) {
         ever_active[g] = ever_strong[g] = 1;
-        return(true);
+        violations = true;
         }
       }
   }
@@ -222,6 +219,7 @@ bool Check_Strong_Set(const arma::mat& Xtilde,
                       const double& n,
                       const double& J, 
                       const arma::colvec& gm,
+                      const arma::colvec& xty,
                       const arma::colvec& beta_new,
                       arma::colvec& xTr,
                       arma::colvec& ever_strong, 
@@ -231,18 +229,16 @@ bool Check_Strong_Set(const arma::mat& Xtilde,
   for(arma::uword g = 0; g < J; g++){
     double lambda2 = lambda_val * gm[g] * (1-alpha);
     if(ever_active[g] == 0 && ever_strong[g] == 1){
-      arma::colvec z = colvec(K[g], fill::zeros);
-      arma::colvec LZ = colvec(K[g], fill::zeros);
-      arma::colvec beta_ols_g = colvec(K[g], fill::zeros);
+      double LZ_norm_sq = 0;
       for(arma::uword j = K1[g]; j < K1[g+1]; j++){
-        z[j-K1[g]] =  arma::as_scalar(Xtilde.col(j).t() * r / n);
-        beta_ols_g[j-K1[g]] = arma::as_scalar(Xtilde.col(j).t() * Ytilde / n);
-        LZ[j-K1[g]] = z[j-K1[g]] + lambda2*(d_val*beta_ols_g[j-K1[g]] - beta_new[j-K1[g]]);
+        double z = arma::dot(Xtilde.col(j), r) / n;
+        double LZ = z + lambda2 * (d_val * xty[j] - beta_new[j]);
+        LZ_norm_sq += LZ * LZ;
       }
-      xTr[g] = norm(LZ,2);
+      xTr[g] = std::sqrt(LZ_norm_sq);
       if (xTr[g]  > lambda_val * gm[g] * alpha) {
         ever_active[g] = 1;
-        return(true);
+        violations = true;
         }
       }
   }
@@ -253,40 +249,40 @@ bool Check_Strong_Set(const arma::mat& Xtilde,
 
 // Group descent update for sglasso
 void gd_sglasso(const arma::mat& Xtilde, 
-                const arma::colvec& Ytilde, 
-                const double g,
-                const double l_indx,
+                const arma::uword g,
+                const arma::uword l_indx,
                 const double lambda1,
                 const double lambda2,
-                const arma::colvec d,
-                const double d_indx,
+                const arma::colvec& d,
+                const arma::uword d_indx,
                 const arma::colvec& K,
                 const arma::colvec& K1,
                 const double n,
-                const arma::colvec& gm,
+                const arma::colvec& xty,
                 arma::colvec& beta_last,
                 arma::colvec& beta_new,
                 arma::colvec& r,
                 arma::mat& df){
   // write some
-  arma::colvec z = colvec(K[g], fill::zeros);
-  arma::colvec LZ = colvec(K[g], fill::zeros);
-  arma::colvec beta_ols_g = colvec(K[g], fill::zeros);
-  for(arma::uword j = K1[g]; j < K1[g+1]; j++){
-    z[j-K1[g]] = arma::as_scalar(beta_last[j] + ((Xtilde.col(j).t() * r) / n));
-    beta_ols_g[j-K1[g]] = arma::as_scalar(Xtilde.col(j).t() * Ytilde / n);
-    LZ[j-K1[g]] = z[j-K1[g]] + d[d_indx]*lambda2*beta_ols_g[j-K1[g]];
-    }
+  arma::uword start = static_cast<arma::uword>(K1[g]);
+  arma::uword end = static_cast<arma::uword>(K1[g+1] - 1);
+  const arma::subview_cols<double> Xg = Xtilde.cols(start, end);
+  arma::colvec beta_old_g = beta_last.subvec(start, end);
+  arma::colvec z = beta_old_g + Xg.t() * r / n;
+  arma::colvec LZ = z + d[d_indx] * lambda2 * xty.subvec(start, end);
   double LZ_norm = norm(LZ,2);
   double len = S_c(LZ_norm,lambda1)/(1+lambda2);
-   if(len !=0 || beta_last[K1[g]] !=0){
-    for(arma::uword j = K1[g]; j < K1[g+1]; j++){
-      // Update beta
-      beta_new[j] = len * LZ[j-K1[g]]/ LZ_norm;
-      // Update Partial residual
-      r = r - Xtilde.col(j) * (beta_new[j] - beta_last[j]);
-      }
+  if(len != 0 || arma::any(beta_old_g != 0)){
+    arma::colvec beta_new_g = colvec(beta_old_g.n_elem, fill::zeros);
+    if (LZ_norm > 0) {
+      beta_new_g = len * LZ / LZ_norm;
     }
+    arma::colvec delta = beta_new_g - beta_old_g;
+    if (arma::any(delta != 0)) {
+      r -= Xg * delta;
+      beta_new.subvec(start, end) = beta_new_g;
+    }
+  }
   // Update df
   if(len > 0 ) df(l_indx,d_indx) +=  K[g] * len / LZ_norm;
   }
@@ -315,7 +311,7 @@ List gd_sglasso_ssr(const arma::mat& Xtilde,
   arma::uword J = K1.n_rows-1;
   arma::uword D = d.n_elem;
   arma::uword L = lambda.n_elem;
-  arma::uword iteration = 0;
+  arma::colvec xty = Xtilde.t() * Ytilde / n;
   // Outcome
   // arma::cube eta_mat  = cube(n, L,D,fill::zeros);
   arma::cube beta_mat = cube(p, L,D,fill::zeros);
@@ -344,10 +340,11 @@ List gd_sglasso_ssr(const arma::mat& Xtilde,
     // Path for lambda
     for(arma::uword l_indx = 0; l_indx < L; l_indx++){
 //      R_CheckUserInterrupt();
+      arma::uword iteration = 0;
 
 
       // ssr screening
-      ssr_sglasso(K,K1,Xtilde, r,gm,lambda,lambda_max, l_indx,alpha, n, J,beta_last, xTr, ever_strong);
+      ssr_sglasso(K,K1,Xtilde, r,gm,lambda,lambda_max, l_indx,alpha, n, J, xTr, ever_strong);
       rejections(l_indx,d_indx) = J - sum(ever_strong);
       
       while (iteration < max_iter) {
@@ -357,44 +354,46 @@ List gd_sglasso_ssr(const arma::mat& Xtilde,
             iteration += 1;
             iter(l_indx,d_indx) +=1;
             df(l_indx,d_indx) = 0;
+            arma::colvec beta_old = beta_last;
 
 
             
-            // update for penalized groups
-            for (arma::uword g=0; g<J; g++) {
+            // Update only active groups. This avoids checking every group on
+            // every BCD sweep when SSR/KKT screening leaves a sparse active set.
+            arma::uvec active_groups = arma::find(ever_active != 0);
+            for (arma::uword active_indx = 0; active_indx < active_groups.n_elem; active_indx++) {
+              arma::uword g = active_groups[active_indx];
               double lambda1 = lambda[l_indx] * gm[g] * alpha;
               double lambda2 = lambda[l_indx] * gm[g] * (1-alpha);
-              if (ever_active[g]) {
-                gd_sglasso(Xtilde, Ytilde, g,l_indx,lambda1,lambda2,d,d_indx,K,K1,n,gm,beta_last,
-                           beta_new,r,df);
-              }
+              gd_sglasso(Xtilde, g,l_indx,lambda1,lambda2,d,d_indx,K,K1,n,xty,beta_last,
+                         beta_new,r,df);
             }
             
-            // update beta values
-            beta_last = beta_new;
-            // store new beta to beta_mat
-            beta_mat.slice(d_indx).col(l_indx) = beta_last;
-            
-            
             // Check convergence
-            if(checkConvergence(beta_new, beta_last, eps,J)){
+            if(checkConvergence(beta_new, beta_old, eps,p)){
               converged = true;
               // update loss
               loss(l_indx,d_indx) = gLoss(r, n);
+              beta_last = beta_new;
               if(converged) break;
             }
+            beta_last = beta_new;
           } // end for first while loop
           
           
           // Scan for violations in strong set
-          bool violations = Check_Strong_Set(Xtilde, Ytilde, r, K1, K, lambda[l_indx], alpha, d[d_indx],n, J, gm, beta_last, xTr, ever_strong, ever_active);
+          bool violations = Check_Strong_Set(Xtilde, Ytilde, r, K1, K, lambda[l_indx], alpha, d[d_indx],n, J, gm, xty, beta_last, xTr, ever_strong, ever_active);
           if (violations == false) break;
         } // end for second while loop
         
         // Scan for violations in strong set
-        bool violations = Check_Rest_Set(Xtilde, Ytilde, r, K1, K, lambda[l_indx], alpha, d[d_indx],n, J, gm, beta_last, xTr, ever_strong, ever_active);
+        bool violations = Check_Rest_Set(Xtilde, Ytilde, r, K1, K, lambda[l_indx], alpha, d[d_indx],n, J, gm, xty, beta_last, xTr, ever_strong, ever_active);
         if (violations == false) break;
       } // end for third while loop
+
+      // Store the final coefficients for this lambda/d pair once all BCD and
+      // KKT passes have finished.
+      beta_mat.slice(d_indx).col(l_indx) = beta_last;
         
    
       } // ends for lambda index 

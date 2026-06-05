@@ -6,11 +6,11 @@
 \usage{
 \method{predict}{sglasso}(
   object,
-  newx,
+  newx = NULL,
   type = c("response", "coefficients", "vars", "groups"),
   lambda,
   d,
-  s = "ALL",
+  s = c("ALL", "opt"),
   opt_beta = NULL,
   which = 1:length(object$lambda),
   drop = TRUE,

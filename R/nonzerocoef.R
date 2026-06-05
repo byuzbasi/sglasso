@@ -1,7 +1,7 @@
 nonzeroCoef = function (beta, bystep = FALSE) 
 {
-  ### bystep = FALSE means which variables were ever nonzero
-  ### bystep = TRUE means which variables are nonzero for each step
+  # bystep = FALSE returns variables that are nonzero at least once along the path.
+  # bystep = TRUE returns the nonzero variables separately for each path step.
   nr=nrow(beta)
   if (nr == 1) {#degenerate case
     if (bystep) 
@@ -15,7 +15,8 @@ nonzeroCoef = function (beta, bystep = FALSE)
     }
   }
   else {
-    beta=abs(beta)>0 # this is sparse
+    # Work with a logical support matrix; Matrix objects remain sparse here.
+    beta=abs(beta)>0
     which=seq(nr)
     ones=rep(1,ncol(beta))
     nz=as.vector((beta%*%ones)>0)

@@ -14,11 +14,11 @@
 #' @export
 predict.sglasso <- function(
     object,
-    newx,
+    newx = NULL,
     type = c("response", "coefficients", "vars", "groups"),
     lambda,
     d,
-    s = "ALL",
+    s = c("ALL", "opt"),
     opt_beta = NULL,
     which = 1:length(object$lambda),
     drop = TRUE,
@@ -26,11 +26,16 @@ predict.sglasso <- function(
 ) {
   
   type <- match.arg(type)
+  s <- match.arg(s)
   
   if (missing(lambda)) lambda <- object$lambda
   if (missing(d)) d <- object$d
-  
-  newx <- as.matrix(newx)
+
+  if (type == "response" && is.null(newx)) {
+    stop("newx is required when type = 'response'", call. = FALSE)
+  }
+
+  if (!is.null(newx)) newx <- as.matrix(newx)
   
   # ------------------------------------------------------------
   # Special case: final fit with a single lambda and single d
@@ -57,6 +62,14 @@ predict.sglasso <- function(
         return(as.numeric(newx %*% beta))
       }
     }
+
+    if (type == "vars") {
+      return(which(beta[-1] != 0))
+    }
+
+    if (type == "groups") {
+      return(unique(object$group[beta[-1] != 0]))
+    }
   }
   
   # ------------------------------------------------------------
@@ -75,37 +88,62 @@ predict.sglasso <- function(
     if (s == "ALL") {
       if (drop) return(drop(beta)) else return(beta)
     } else {
+      if (is.null(opt_beta)) {
+        stop("opt_beta is required when s = 'opt'", call. = FALSE)
+      }
       return(opt_beta)
     }
   }
   
   if (type == "vars") {
-    return(drop(apply(beta[-1, , , drop = TRUE] != 0, 2, which)))
+    if (s == "opt") {
+      if (is.null(opt_beta)) {
+        stop("opt_beta is required when s = 'opt'", call. = FALSE)
+      }
+      return(which(opt_beta[-1] != 0))
+    }
+
+    out <- apply(
+      beta[-1, , , drop = FALSE] != 0,
+      c(2, 3),
+      which
+    )
+    if (drop) return(drop(out)) else return(out)
   }
   
   if (type == "groups") {
-    return(drop(apply(
-      beta[-1, , , drop = TRUE] != 0,
-      2,
+    if (s == "opt") {
+      if (is.null(opt_beta)) {
+        stop("opt_beta is required when s = 'opt'", call. = FALSE)
+      }
+      return(unique(object$group[opt_beta[-1] != 0]))
+    }
+
+    out <- apply(
+      beta[-1, , , drop = FALSE] != 0,
+      c(2, 3),
       function(x) unique(object$group[x])
-    )))
+    )
+    if (drop) return(drop(out)) else return(out)
   }
   
   if (type == "response") {
     if (s == "ALL") {
       y_hat <- array(
-        NA,
+        NA_real_,
         dim = c(nrow(newx), length(lambda), length(d))
       )
-      
-      y_hat[] <- apply(
-        beta,
-        3,
-        function(x) cbind(1, newx) %*% x
-      )
-      
+
+      x_int <- cbind(1, newx)
+      for (di in seq_along(d)) {
+        y_hat[, , di] <- x_int %*% beta[, , di, drop = FALSE][, , 1]
+      }
+
       return(y_hat)
     } else {
+      if (is.null(opt_beta)) {
+        stop("opt_beta is required when s = 'opt'", call. = FALSE)
+      }
       return(as.numeric(cbind(1, newx) %*% opt_beta))
     }
   }

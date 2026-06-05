@@ -104,7 +104,7 @@ sglasso <- function(X ,Y, group=1:ncol(X),
   
   ###
   if (missing(lambda)) {
-    lambda_values <- lambda_sglasso(Xtilde$X,Ytilde,group,alpha,lambda.min.ratio,nlambda)
+    lambda_values <- lambda_sglasso(Xtilde$X,Ytilde,Xtilde$g,alpha,lambda.min.ratio,nlambda)
     lambda <- lambda_values[[1]]
     lambda_max <- lambda_values[[2]]
     user.lambda <- FALSE

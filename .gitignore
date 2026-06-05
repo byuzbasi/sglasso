@@ -6,3 +6,6 @@
 .quarto
 .positai
 .positai
+*.Rcheck/
+..Rcheck/
+src/symbols.rds
