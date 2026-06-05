@@ -26,6 +26,28 @@ bool checkConvergence(const arma::colvec& beta_new,
   return(true);
 }
 
+bool checkConvergenceActive(const arma::colvec& beta_new,
+                            const arma::colvec& beta_old,
+                            const double& eps,
+                            const arma::colvec& K1,
+                            const arma::uvec& active_groups) {
+  for (arma::uword active_indx = 0; active_indx < active_groups.n_elem; active_indx++) {
+    arma::uword g = active_groups[active_indx];
+    for (arma::uword j = K1[g]; j < K1[g + 1]; j++) {
+      if (beta_new[j] != 0 && beta_old[j] != 0) {
+        if (abs(beta_new[j] - beta_old[j]) > eps) {
+          return(false);
+        }
+      } else if (beta_new[j] == 0 && beta_old[j] != 0) {
+        return(false);
+      } else if (beta_new[j] != 0 && beta_old[j] == 0) {
+        return(false);
+      }
+    }
+  }
+  return(true);
+}
+
 
 // Gaussian loss function
 double gLoss(const arma::colvec& r, int n) {
@@ -262,12 +284,12 @@ void gd_sglasso(const arma::mat& Xtilde,
                 arma::colvec& beta_last,
                 arma::colvec& beta_new,
                 arma::colvec& r,
-                arma::mat& df){
+                arma::mat& df,
+                arma::colvec& LZ){
   // write some
   arma::uword start = static_cast<arma::uword>(K1[g]);
   arma::uword end = static_cast<arma::uword>(K1[g+1] - 1);
   arma::uword group_size = end - start + 1;
-  arma::colvec LZ = colvec(group_size, fill::zeros);
   double d_lambda2 = d[d_indx] * lambda2;
   double LZ_norm_sq = 0;
 
@@ -355,6 +377,7 @@ List gd_sglasso_ssr(const arma::mat& Xtilde,
     arma::colvec xTr = colvec(J, fill::zeros);
     arma::colvec ever_strong = colvec(J, fill::zeros);
     arma::colvec ever_active = colvec(J, fill::zeros);
+    arma::colvec LZ_scratch = colvec(static_cast<arma::uword>(K.max()), fill::zeros);
 
     
     // Path for lambda
@@ -374,7 +397,6 @@ List gd_sglasso_ssr(const arma::mat& Xtilde,
             iteration += 1;
             iter(l_indx,d_indx) +=1;
             df(l_indx,d_indx) = 0;
-            arma::colvec beta_old = beta_last;
 
 
             
@@ -386,11 +408,11 @@ List gd_sglasso_ssr(const arma::mat& Xtilde,
               double lambda1 = lambda[l_indx] * gm[g] * alpha;
               double lambda2 = lambda[l_indx] * gm[g] * (1-alpha);
               gd_sglasso(Xtilde, g,l_indx,lambda1,lambda2,d,d_indx,K,K1,n,xty,beta_last,
-                         beta_new,r,df);
+                         beta_new,r,df,LZ_scratch);
             }
             
             // Check convergence
-            if(checkConvergence(beta_new, beta_old, eps,p)){
+            if(checkConvergenceActive(beta_new, beta_last, eps, K1, active_groups)){
               converged = true;
               // update loss
               loss(l_indx,d_indx) = gLoss(r, n);
