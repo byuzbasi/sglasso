@@ -9,3 +9,4 @@
 *.Rcheck/
 ..Rcheck/
 src/symbols.rds
+README.html

@@ -1,5 +1,51 @@
 #' @export
-plot.cv.sglasso <- function(x, log.l = TRUE, col = "red", selected = TRUE, ...) {
+plot.cv.sglasso <- function(x,
+                            type.tun = c("lambda", "d"),
+                            log.l = TRUE,
+                            col = "red",
+                            selected = TRUE,
+                            ...) {
+
+  type.tun <- match.arg(type.tun)
+
+  if (type.tun == "d") {
+    d <- x$d
+    cve <- x$cve[x$min_ind[1], ]
+    cvse <- x$cvse[x$min_ind[1], ]
+
+    L <- cve - cvse
+    U <- cve + cvse
+
+    ind <- is.finite(d) & seq_along(cve) <= length(d)
+    ylim <- range(c(L[ind], U[ind]), na.rm = TRUE)
+
+    plot(
+      d[ind],
+      cve[ind],
+      type = "n",
+      xlab = "d",
+      ylab = "CV Error",
+      ylim = ylim,
+      las = 1,
+      bty = "n"
+    )
+
+    abline(v = d[x$min_ind[2]], lty = 2, col = "black")
+
+    arrows(
+      d[ind],
+      L[ind],
+      d[ind],
+      U[ind],
+      code = 3,
+      angle = 90,
+      col = "gray80",
+      length = 0.05
+    )
+
+    points(d[ind], cve[ind], col = col, pch = 19, cex = 0.6)
+    return(invisible())
+  }
   
   # Plot the lambda path on the same scale used for model selection.
   l <- x$lambda
