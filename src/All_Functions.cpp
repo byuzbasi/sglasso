@@ -266,21 +266,41 @@ void gd_sglasso(const arma::mat& Xtilde,
   // write some
   arma::uword start = static_cast<arma::uword>(K1[g]);
   arma::uword end = static_cast<arma::uword>(K1[g+1] - 1);
-  const arma::subview_cols<double> Xg = Xtilde.cols(start, end);
-  arma::colvec beta_old_g = beta_last.subvec(start, end);
-  arma::colvec z = beta_old_g + Xg.t() * r / n;
-  arma::colvec LZ = z + d[d_indx] * lambda2 * xty.subvec(start, end);
-  double LZ_norm = norm(LZ,2);
+  arma::uword group_size = end - start + 1;
+  arma::colvec LZ = colvec(group_size, fill::zeros);
+  double d_lambda2 = d[d_indx] * lambda2;
+  double LZ_norm_sq = 0;
+
+  for (arma::uword offset = 0; offset < group_size; offset++) {
+    arma::uword j = start + offset;
+    double z = beta_last[j] + arma::dot(Xtilde.col(j), r) / n;
+    LZ[offset] = z + d_lambda2 * xty[j];
+    LZ_norm_sq += LZ[offset] * LZ[offset];
+  }
+
+  double LZ_norm = std::sqrt(LZ_norm_sq);
   double len = S_c(LZ_norm,lambda1)/(1+lambda2);
-  if(len != 0 || arma::any(beta_old_g != 0)){
-    arma::colvec beta_new_g = colvec(beta_old_g.n_elem, fill::zeros);
-    if (LZ_norm > 0) {
-      beta_new_g = len * LZ / LZ_norm;
+
+  bool has_nonzero_old = false;
+  for (arma::uword j = start; j <= end; j++) {
+    if (beta_last[j] != 0) {
+      has_nonzero_old = true;
+      break;
     }
-    arma::colvec delta = beta_new_g - beta_old_g;
-    if (arma::any(delta != 0)) {
-      r -= Xg * delta;
-      beta_new.subvec(start, end) = beta_new_g;
+  }
+
+  if(len != 0 || has_nonzero_old){
+    for (arma::uword offset = 0; offset < group_size; offset++) {
+      arma::uword j = start + offset;
+      double beta_new_j = 0;
+      if (LZ_norm > 0) {
+        beta_new_j = len * LZ[offset] / LZ_norm;
+      }
+      double delta = beta_new_j - beta_last[j];
+      if (delta != 0) {
+        beta_new[j] = beta_new_j;
+        r -= Xtilde.col(j) * delta;
+      }
     }
   }
   // Update df
