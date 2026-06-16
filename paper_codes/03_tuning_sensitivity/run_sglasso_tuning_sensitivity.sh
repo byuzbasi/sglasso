@@ -32,7 +32,8 @@ log_msg "Start time      : $(date)"
 log_msg "=================================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKDIR="${WORKDIR:-$PWD}"
+DEFAULT_WORKDIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+WORKDIR="${WORKDIR:-$DEFAULT_WORKDIR}"
 
 mkdir -p "${WORKDIR}/logs"
 mkdir -p "${WORKDIR}/results/tuning_sensitivity"

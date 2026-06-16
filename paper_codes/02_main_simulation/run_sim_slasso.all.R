@@ -31,6 +31,7 @@ script_dir <- if (length(file_arg) > 0L) {
 
 source_candidates <- c(
   file.path(script_dir, "sglasso_sim_function_full_tuning.R"),
+  file.path(getwd(), "paper_codes", "02_main_simulation", "sglasso_sim_function_full_tuning.R"),
   file.path(getwd(), "02_main_simulation", "sglasso_sim_function_full_tuning.R"),
   file.path(getwd(), "sglasso_sim_function_full_tuning.R")
 )

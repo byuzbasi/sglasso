@@ -32,7 +32,8 @@ log_msg "Start time      : $(date)"
 log_msg "=================================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKDIR="${WORKDIR:-$PWD}"
+DEFAULT_WORKDIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+WORKDIR="${WORKDIR:-$DEFAULT_WORKDIR}"
 OUTDIR="${OUTDIR:-results/main_simulation}"
 
 mkdir -p "${WORKDIR}/logs"
@@ -84,7 +85,7 @@ else
 fi
 
 if [ ! -f "${SCRIPT_DIR}/sglasso_sim_function_full_tuning.R" ] &&
-   [ ! -f "R/sglasso_sim_function_full_tuning.R" ] &&
+   [ ! -f "paper_codes/02_main_simulation/sglasso_sim_function_full_tuning.R" ] &&
    [ ! -f "sglasso_sim_function_full_tuning.R" ]; then
   echo "Cannot find sglasso_sim_function_full_tuning.R." >&2
   exit 1

@@ -14,7 +14,7 @@ if (is.na(script_file)) {
   script_file <- if (length(file_arg) > 0L) {
     normalizePath(sub("^--file=", "", file_arg[1L]), mustWork = FALSE)
   } else {
-    normalizePath("04_scalability/run_scalability_analysis.R",
+    normalizePath("paper_codes/04_scalability/run_scalability_analysis.R",
                   mustWork = FALSE)
   }
 }

@@ -65,6 +65,7 @@ script_dir <- if (length(file_arg) > 0) {
 
 function_candidates <- c(
   file.path(script_dir, "sglasso_real_function.R"),
+  file.path(getwd(), "paper_codes", "01_real_data", "sglasso_real_function.R"),
   file.path(getwd(), "01_real_data", "sglasso_real_function.R"),
   file.path(getwd(), "sglasso_real_function.R")
 )

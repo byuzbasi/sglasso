@@ -36,7 +36,8 @@ log_msg "Start time      : $(date)"
 log_msg "=================================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKDIR="${WORKDIR:-$PWD}"
+DEFAULT_WORKDIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+WORKDIR="${WORKDIR:-$DEFAULT_WORKDIR}"
 OUTDIR="${OUTDIR:-results/main_simulation_debug}"
 
 mkdir -p "${WORKDIR}/logs"
@@ -76,6 +77,8 @@ if [ -f "${SCRIPT_DIR}/02_main_simulation/run_sim_slasso.all.R" ]; then
   RSCRIPT_FILE="${SCRIPT_DIR}/02_main_simulation/run_sim_slasso.all.R"
 elif [ -f "${SCRIPT_DIR}/run_sim_slasso.all.R" ]; then
   RSCRIPT_FILE="${SCRIPT_DIR}/run_sim_slasso.all.R"
+elif [ -f "paper_codes/02_main_simulation/run_sim_slasso.all.R" ]; then
+  RSCRIPT_FILE="paper_codes/02_main_simulation/run_sim_slasso.all.R"
 elif [ -f "02_main_simulation/run_sim_slasso.all.R" ]; then
   RSCRIPT_FILE="02_main_simulation/run_sim_slasso.all.R"
 elif [ -f "run_sim_slasso.all.R" ]; then
@@ -87,6 +90,7 @@ fi
 
 if [ ! -f "${SCRIPT_DIR}/02_main_simulation/sglasso_sim_function_full_tuning.R" ] &&
    [ ! -f "${SCRIPT_DIR}/sglasso_sim_function_full_tuning.R" ] &&
+   [ ! -f "paper_codes/02_main_simulation/sglasso_sim_function_full_tuning.R" ] &&
    [ ! -f "02_main_simulation/sglasso_sim_function_full_tuning.R" ] &&
    [ ! -f "sglasso_sim_function_full_tuning.R" ]; then
   echo "Cannot find sglasso_sim_function_full_tuning.R." >&2

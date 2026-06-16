@@ -14,21 +14,21 @@ results/
 
 Submit from the project root:
 
-sbatch 02_main_simulation/run_sim_slasso_all.sh
-sbatch 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
-sbatch 04_scalability/run_scalability_analysis.sh
+sbatch paper_codes/02_main_simulation/run_sim_slasso_all.sh
+sbatch paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+sbatch paper_codes/04_scalability/run_scalability_analysis.sh
 
 Small tests:
 
 REPEATNUM=1 OUTDIR=results/main_simulation_test \
-  Rscript --vanilla 02_main_simulation/run_sim_slasso.all.R
+  Rscript --vanilla paper_codes/02_main_simulation/run_sim_slasso.all.R
 
-Rscript --vanilla 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R \
+Rscript --vanilla paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R \
   --nrep=1 \
   --cores=1 \
   --outdir=results/tuning_sensitivity_test
 
-Rscript --vanilla 04_scalability/run_scalability_analysis.R \
+Rscript --vanilla paper_codes/04_scalability/run_scalability_analysis.R \
   --p_grid=1000 \
   --J_grid=200 \
   --nrep=1 \

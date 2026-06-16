@@ -119,13 +119,13 @@ Real data and simulations:
 
 Files:
 
-01_real_data/run_real_slasso_all.R
-01_real_data/sglasso_real_function.R
-01_real_data/run_real_slasso_all.sh
+paper_codes/01_real_data/run_real_slasso_all.R
+paper_codes/01_real_data/sglasso_real_function.R
+paper_codes/01_real_data/run_real_slasso_all.sh
 
 Submit from the project root:
 
-sbatch 01_real_data/run_real_slasso_all.sh
+sbatch paper_codes/01_real_data/run_real_slasso_all.sh
 
 Default output:
 
@@ -134,11 +134,11 @@ results/real_data/
 Useful overrides:
 
 sbatch --export=ALL,NREP=100,OUTDIR=results/real_data \
-  01_real_data/run_real_slasso_all.sh
+  paper_codes/01_real_data/run_real_slasso_all.sh
 
 Small local/server test:
 
-Rscript --vanilla 01_real_data/run_real_slasso_all.R \
+Rscript --vanilla paper_codes/01_real_data/run_real_slasso_all.R \
   --nrep=1 \
   --seed=2025 \
   --outdir=results/real_data_test
@@ -153,13 +153,13 @@ it from GitHub using remotes::install_github("byuzbasi/sglasso").
 
 Files:
 
-02_main_simulation/run_sim_slasso.all.R
-02_main_simulation/run_sim_slasso_all.sh
-02_main_simulation/sglasso_sim_function_full_tuning.R
+paper_codes/02_main_simulation/run_sim_slasso.all.R
+paper_codes/02_main_simulation/run_sim_slasso_all.sh
+paper_codes/02_main_simulation/sglasso_sim_function_full_tuning.R
 
 Submit from the project root:
 
-sbatch 02_main_simulation/run_sim_slasso_all.sh
+sbatch paper_codes/02_main_simulation/run_sim_slasso_all.sh
 
 Default output:
 
@@ -168,12 +168,12 @@ results/main_simulation/
 Useful overrides:
 
 sbatch --export=ALL,REPEATNUM=100,OUTDIR=results/main_simulation \
-  02_main_simulation/run_sim_slasso_all.sh
+  paper_codes/02_main_simulation/run_sim_slasso_all.sh
 
 Small direct test:
 
 REPEATNUM=1 OUTDIR=results/main_simulation_test \
-  Rscript --vanilla 02_main_simulation/run_sim_slasso.all.R
+  Rscript --vanilla paper_codes/02_main_simulation/run_sim_slasso.all.R
 
 
 6) Run Tuning-Criterion Sensitivity
@@ -185,13 +185,13 @@ SGLASSO.
 
 Files:
 
-03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R
-03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
-03_tuning_sensitivity/sglasso_sim_function_full_tuning.R
+paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R
+paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+paper_codes/03_tuning_sensitivity/sglasso_sim_function_full_tuning.R
 
 Submit from the project root:
 
-sbatch 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+sbatch paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
 
 Default output:
 
@@ -200,11 +200,11 @@ results/tuning_sensitivity/
 Useful overrides:
 
 sbatch --export=ALL,NREP=5,CORES=20,OUTDIR=results/tuning_sensitivity \
-  03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+  paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
 
 Small direct test:
 
-Rscript --vanilla 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R \
+Rscript --vanilla paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R \
   --nrep=1 \
   --cores=1 \
   --outdir=results/tuning_sensitivity_test
@@ -219,13 +219,13 @@ p and J increase. Defaults include p > 10000 and J > 1000.
 
 Files:
 
-04_scalability/run_scalability_analysis.R
-04_scalability/run_scalability_analysis.sh
-04_scalability/sglasso_sim_function_full_tuning.R
+paper_codes/04_scalability/run_scalability_analysis.R
+paper_codes/04_scalability/run_scalability_analysis.sh
+paper_codes/04_scalability/sglasso_sim_function_full_tuning.R
 
 Submit from the project root:
 
-sbatch 04_scalability/run_scalability_analysis.sh
+sbatch paper_codes/04_scalability/run_scalability_analysis.sh
 
 Default output:
 
@@ -243,11 +243,11 @@ NLAMBDA=50
 Useful overrides:
 
 sbatch --export=ALL,P_GRID=1000,5000,10000,15000,J_GRID=200,500,1000,1500,NREP=5,D_VALUE=0,OUTDIR=results/scalability \
-  04_scalability/run_scalability_analysis.sh
+  paper_codes/04_scalability/run_scalability_analysis.sh
 
 Small direct test:
 
-Rscript --vanilla 04_scalability/run_scalability_analysis.R \
+Rscript --vanilla paper_codes/04_scalability/run_scalability_analysis.R \
   --p_grid=1000 \
   --J_grid=200 \
   --nrep=1 \
@@ -350,7 +350,7 @@ scancel -u USERNAME
   server requires an account, submit with the cluster-specific option,
   for example:
 
-  sbatch -A ACCOUNT_NAME 04_scalability/run_scalability_analysis.sh
+  sbatch -A ACCOUNT_NAME paper_codes/04_scalability/run_scalability_analysis.sh
 
 - BLAS/OpenMP thread counts are set to 1 in the .sh files to reduce CPU
   oversubscription.
