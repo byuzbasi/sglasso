@@ -93,7 +93,6 @@ install_and_load_packages <- function(pkgs = required_packages,
         
         remotes::install_github(
           github_packages[[pkg]],
-          subdir = if (pkg == "sglasso") "slasso_package" else NULL,
           lib = lib,
           upgrade = "never",
           force = FALSE

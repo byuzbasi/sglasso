@@ -51,7 +51,6 @@ for (pkg in cran_packages) {
 if (!requireNamespace("sglasso", quietly = TRUE)) {
   remotes::install_github(
     "byuzbasi/sglasso",
-    subdir = "slasso_package",
     lib = install_lib,
     upgrade = "never",
     dependencies = TRUE

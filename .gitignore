@@ -22,14 +22,14 @@ results_scalability/
 Truba All Runs/logs/
 Truba All Runs/results/
 Truba All Runs/tmp/
-Truba All Runs slasso paper/logs/
-Truba All Runs slasso paper/results/
-Truba All Runs slasso paper/tmp/
-slasso_package/.DS_Store
-slasso_package/R/.DS_Store
-slasso_package/data/.DS_Store
-slasso_package/src/.DS_Store
-slasso_package/src/*.o
-slasso_package/src/*.so
-slasso_package/src/symbols.rds
-slasso_package/README.html
+paper_codes/logs/
+paper_codes/results/
+paper_codes/tmp/
+paper_codes/.DS_Store
+sglasso_package/
+R/.DS_Store
+data/.DS_Store
+src/.DS_Store
+src/*.o
+src/*.so
+src/symbols.rds

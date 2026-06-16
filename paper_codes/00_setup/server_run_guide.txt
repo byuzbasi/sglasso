@@ -145,7 +145,7 @@ Rscript --vanilla 01_real_data/run_real_slasso_all.R \
 
 Note:
 If the sglasso package is not installed, sglasso_real_function.R installs
-it from GitHub using remotes::install_github("byuzbasi/sglasso", subdir = "slasso_package").
+it from GitHub using remotes::install_github("byuzbasi/sglasso").
 
 
 5) Run Main Simulation

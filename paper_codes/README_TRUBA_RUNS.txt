@@ -95,14 +95,9 @@ Gerekirse yol override edilebilir:
 Paket kontrolu
 --------------
 
-Eger slasso_package klasoru bu klasorle ayni dizine yuklendiyse,
-TRUBA'da kosulari gondermeden once gerekli paketleri kontrol etmek icin:
+sglasso paketi GitHub repo kokunden kurulacak sekilde hazirlandi:
 
-  bash ../slasso_package/check_packages.sh
-
-Paket listeleri ve kontrol dosyalari:
-
-  ../slasso_package/
+  remotes::install_github("byuzbasi/sglasso")
 
 Notlar
 -----
