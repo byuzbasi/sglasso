@@ -10,3 +10,26 @@
 ..Rcheck/
 src/symbols.rds
 README.html
+.DS_Store
+Real data applications -Truba/logs/
+Real data applications -Truba/real_data_results/
+Real data applications -Truba/adelie_lambda_inf_rep_*.rds
+results/real_data/
+results/main_simulation/
+results/tuning_sensitivity/
+results/scalability/
+results_scalability/
+Truba All Runs/logs/
+Truba All Runs/results/
+Truba All Runs/tmp/
+Truba All Runs slasso paper/logs/
+Truba All Runs slasso paper/results/
+Truba All Runs slasso paper/tmp/
+slasso_package/.DS_Store
+slasso_package/R/.DS_Store
+slasso_package/data/.DS_Store
+slasso_package/src/.DS_Store
+slasso_package/src/*.o
+slasso_package/src/*.so
+slasso_package/src/symbols.rds
+slasso_package/README.html

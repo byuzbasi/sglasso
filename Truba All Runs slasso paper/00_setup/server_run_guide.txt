@@ -1,0 +1,360 @@
+SGLASSO SERVER RUN GUIDE
+========================
+
+This guide describes how to run the real-data application, main
+simulation, and reviewer simulation jobs on a SLURM server. All outputs
+are written under one top-level results directory with separate
+subfolders, so real data, main simulation, tuning sensitivity, and
+scalability outputs do not mix.
+
+
+Recommended Output Structure
+----------------------------
+
+results/
+├── real_data/
+│   ├── bardet/
+│   ├── Birthwt/
+│   ├── GenAtHum/
+│   ├── ALL_raw_results.rds
+│   ├── ALL_raw_results.csv
+│   ├── ALL_summary.rds
+│   ├── ALL_summary.csv
+│   └── sessionInfo.txt
+│
+├── main_simulation/
+│   ├── rds/
+│   │   ├── all_sim_slasso_results.rds
+│   │   ├── paper_summary_snr_rhob.rds
+│   │   ├── paper_summary_setting.rds
+│   │   └── paper_summary_overall.rds
+│   └── tables/
+│       ├── all_sim_slasso_results.csv
+│       ├── paper_summary_snr_rhob.csv
+│       ├── paper_summary_setting.csv
+│       └── paper_summary_overall.csv
+│
+├── tuning_sensitivity/
+│   ├── sglasso_tuning_all_raw.rds
+│   ├── sglasso_tuning_all_raw.csv
+│   ├── sglasso_tuning_summary_by_setting.csv
+│   ├── sglasso_tuning_summary_by_scenario.csv
+│   ├── sglasso_tuning_summary_overall.csv
+│   ├── summary_tune_scenario_table.csv
+│   └── summary_tune_scenario_table.tex
+│
+└── scalability/
+    ├── scalability_raw.rds
+    ├── scalability_raw.csv
+    ├── scalability_summary.rds
+    └── scalability_summary.csv
+
+
+1) Prepare Working Directory
+----------------------------
+
+Submit jobs from a scratch/work directory, not from a home directory if
+your cluster discourages heavy home-directory jobs.
+
+Example:
+
+mkdir -p /arf/scratch/byuzbasi/sglasso
+cd /arf/scratch/byuzbasi/sglasso
+
+Copy the contents of "Truba All Runs slasso paper" into this directory.
+The expected layout on TRUBA is:
+
+sglasso/
+├── 00_setup/
+├── 01_real_data/
+├── 02_main_simulation/
+├── 03_tuning_sensitivity/
+├── 04_scalability/
+├── 99_optional_plotting/
+├── README_TRUBA_RUNS.txt
+├── run_sim_slasso_all.sh
+├── run_sim_slasso_debug.sh
+└── submit_all_runs.sh
+
+
+2) Create Common Folders
+------------------------
+
+From the project root:
+
+mkdir -p logs
+mkdir -p results/real_data
+mkdir -p results/main_simulation
+mkdir -p results/tuning_sensitivity
+mkdir -p results/scalability
+mkdir -p tmp
+
+
+3) R Library and Module Setup
+-----------------------------
+
+The .sh files try to load the R module automatically if the module
+command exists. You can override the module name at submission time:
+
+sbatch --export=ALL,R_MODULE=apps/R/4.3.0-gcc-11.3.1 ...
+
+All TRUBA run scripts use the existing R 4.3 user library by default:
+
+Real data and simulations:
+  /arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3
+
+sglasso, simstudy, gglasso, grpreg, grpnet, adelie, data.table, dplyr,
+readr, foreach, doParallel, doRNG, ggplot2, caret, Metrics,
+matrixcalc, and tibble are expected to be available in this library.
+MASS is loaded from the R module library.
+
+You can override it:
+
+Real data and simulations:
+  sbatch --export=ALL,R_LIBS_USER=/path/to/R/4.3 ...
+
+
+4) Run Real-Data Application
+----------------------------
+
+Files:
+
+01_real_data/run_real_slasso_all.R
+01_real_data/sglasso_real_function.R
+01_real_data/run_real_slasso_all.sh
+
+Submit from the project root:
+
+sbatch 01_real_data/run_real_slasso_all.sh
+
+Default output:
+
+results/real_data/
+
+Useful overrides:
+
+sbatch --export=ALL,NREP=100,OUTDIR=results/real_data \
+  01_real_data/run_real_slasso_all.sh
+
+Small local/server test:
+
+Rscript --vanilla 01_real_data/run_real_slasso_all.R \
+  --nrep=1 \
+  --seed=2025 \
+  --outdir=results/real_data_test
+
+Note:
+If the sglasso package is not installed, sglasso_real_function.R installs
+it from GitHub using remotes::install_github("byuzbasi/sglasso", subdir = "slasso_package").
+
+
+5) Run Main Simulation
+----------------------
+
+Files:
+
+02_main_simulation/run_sim_slasso.all.R
+02_main_simulation/run_sim_slasso_all.sh
+02_main_simulation/sglasso_sim_function_full_tuning.R
+
+Submit from the project root:
+
+sbatch 02_main_simulation/run_sim_slasso_all.sh
+
+Default output:
+
+results/main_simulation/
+
+Useful overrides:
+
+sbatch --export=ALL,REPEATNUM=100,OUTDIR=results/main_simulation \
+  02_main_simulation/run_sim_slasso_all.sh
+
+Small direct test:
+
+REPEATNUM=1 OUTDIR=results/main_simulation_test \
+  Rscript --vanilla 02_main_simulation/run_sim_slasso.all.R
+
+
+6) Run Tuning-Criterion Sensitivity
+-----------------------------------
+
+Reviewer purpose:
+Compare validation-based tuning with AIC, BIC, EBIC, and GCV for
+SGLASSO.
+
+Files:
+
+03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R
+03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+03_tuning_sensitivity/sglasso_sim_function_full_tuning.R
+
+Submit from the project root:
+
+sbatch 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+
+Default output:
+
+results/tuning_sensitivity/
+
+Useful overrides:
+
+sbatch --export=ALL,NREP=5,CORES=20,OUTDIR=results/tuning_sensitivity \
+  03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+
+Small direct test:
+
+Rscript --vanilla 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R \
+  --nrep=1 \
+  --cores=1 \
+  --outdir=results/tuning_sensitivity_test
+
+
+7) Run Scalability Analysis
+---------------------------
+
+Reviewer purpose:
+Compare runtimes for GLASSO, ADELIE, GENET, SGLASSO, GSCAD, and GMCP as
+p and J increase. Defaults include p > 10000 and J > 1000.
+
+Files:
+
+04_scalability/run_scalability_analysis.R
+04_scalability/run_scalability_analysis.sh
+04_scalability/sglasso_sim_function_full_tuning.R
+
+Submit from the project root:
+
+sbatch 04_scalability/run_scalability_analysis.sh
+
+Default output:
+
+results/scalability/
+
+Default grid:
+
+P_GRID=1000,5000,10000,15000
+J_GRID=200,500,1000,1500
+NREP=5
+ALPHA=0.5
+D_VALUE=0
+NLAMBDA=50
+
+Useful overrides:
+
+sbatch --export=ALL,P_GRID=1000,5000,10000,15000,J_GRID=200,500,1000,1500,NREP=5,D_VALUE=0,OUTDIR=results/scalability \
+  04_scalability/run_scalability_analysis.sh
+
+Small direct test:
+
+Rscript --vanilla 04_scalability/run_scalability_analysis.R \
+  --p_grid=1000 \
+  --J_grid=200 \
+  --nrep=1 \
+  --nlambda=3 \
+  --outdir=results/scalability_test
+
+
+8) Monitor Jobs
+---------------
+
+After sbatch, SLURM prints a job id:
+
+Submitted batch job JOBID
+
+Check queue:
+
+squeue -j JOBID
+
+Check accounting after or during the run:
+
+sacct -j JOBID --format=JobID,State,Elapsed,MaxRSS,ExitCode
+
+Follow logs:
+
+tail -f logs/real_slasso_JOBID.out
+tail -f logs/sim_slasso_JOBID.out
+tail -f logs/sgl_tuning_JOBID.out
+tail -f logs/sgl_scale_JOBID.out
+
+Error logs:
+
+tail -f logs/real_slasso_JOBID.err
+tail -f logs/sim_slasso_JOBID.err
+tail -f logs/sgl_tuning_JOBID.err
+tail -f logs/sgl_scale_JOBID.err
+
+
+9) Check Results
+----------------
+
+Real data:
+
+ls -lh results/real_data
+ls -lh results/real_data/*/
+
+Main simulation:
+
+ls -lh results/main_simulation/rds
+ls -lh results/main_simulation/tables
+
+Tuning sensitivity:
+
+ls -lh results/tuning_sensitivity
+
+Scalability:
+
+ls -lh results/scalability
+
+Quick R checks:
+
+real_sum <- read.csv("results/real_data/ALL_summary.csv")
+main_sum <- read.csv("results/main_simulation/tables/paper_summary_overall.csv")
+tune_sum <- read.csv("results/tuning_sensitivity/sglasso_tuning_summary_by_scenario.csv")
+scale_sum <- read.csv("results/scalability/scalability_summary.csv")
+
+head(real_sum)
+head(main_sum)
+head(tune_sum)
+head(scale_sum)
+
+
+10) Download Results
+-------------------
+
+Compress all outputs:
+
+tar -czf results_sglasso_server.tar.gz results logs
+
+Download:
+
+results_sglasso_server.tar.gz
+
+
+11) Cancel Jobs
+---------------
+
+Cancel one job:
+
+scancel JOBID
+
+Cancel all of your jobs:
+
+scancel -u USERNAME
+
+
+12) Notes
+---------
+
+- The .sh files do not hard-code account or email settings. If your
+  server requires an account, submit with the cluster-specific option,
+  for example:
+
+  sbatch -A ACCOUNT_NAME 04_scalability/run_scalability_analysis.sh
+
+- BLAS/OpenMP thread counts are set to 1 in the .sh files to reduce CPU
+  oversubscription.
+
+- The real-data job uses one fewer core than SLURM_CPUS_PER_TASK inside
+  R when possible. The tuning-sensitivity job uses CORES, which can be
+  overridden at submission time.
