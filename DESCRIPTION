@@ -1,8 +1,8 @@
 Package: sglasso
 Type: Package
 Title: Scaled Group Lasso
-Version: 1.1.12
-Date: 2026-06-16
+Version: 1.1.13
+Date: 2026-06-29
 Author: Bahadir Yuzbasi and Jiguo Cao
 Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
 Description: This package integrates the benefits of ridge, lasso, and James-Stein estimates, resulting in improved prediction accuracy for grouped feature selection.

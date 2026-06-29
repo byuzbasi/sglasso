@@ -21,6 +21,26 @@
 #' @param lambda.min.ratio The smallest value for \code{lambda}, as a fraction of
 #' \code{lambda.max}.  Default is .0005.
 #' @param beta_start Optional initial coefficient vector.
+#' @param standardize Logical flag indicating whether \code{X} should be
+#' centered and scaled internally before fitting.  The default is \code{TRUE},
+#' preserving the usual package behavior.  Set to \code{FALSE} only when
+#' \code{X} has already been centered/scaled using the intended training-data
+#' transformation.
+#' @param screen Screening rule used before the final KKT checks. One of
+#' \code{"SSR"}, \code{"none"}, or \code{"SSR_fast"}. The \code{"SSR_fast"}
+#' mode checks the rest-set KKT conditions at the first, first-quartile,
+#' median, third-quartile, and final lambda values. The default is
+#' \code{"SSR"}.
+#' @param diagnostics Logical flag indicating whether detailed per-lambda
+#' timing and final inactive-set KKT residual diagnostics should be computed.
+#' The default is \code{FALSE} to avoid diagnostic overhead in ordinary fits.
+#' @param profile Logical flag indicating whether coarse R-level runtime
+#' components should be recorded. The default is \code{FALSE}.
+#' @param transform Coefficient transformation mode. The default
+#' \code{"eager"} returns the fitted coefficients on the original data scale
+#' during \code{sglasso()}. The experimental \code{"lazy"} mode stores the
+#' solver-scale path and performs the back-transformation when \code{coef()} is
+#' called, which can reduce fit-time overhead in runtime comparisons.
 #' @param eps Convergence threshhold.  The algorithm iterates until the BCD
 #' for the change in linear predictors for each coefficient is less than
 #' \code{eps}.  Default is \code{1e-4}.  
@@ -73,10 +93,30 @@ sglasso <- function(X ,Y, group=1:ncol(X),
                     alpha = 0.5, 
                     beta_start= NULL,
                     family = "gaussian", bilevel = FALSE, max_iter=1e+08, eps = 1e-04,
+                    standardize = TRUE,
+                    screen = c("SSR", "none", "SSR_fast"),
+                    diagnostics = FALSE,
+                    profile = FALSE,
+                    transform = c("eager", "lazy"),
                     lambda.min.ratio = 0.005,
                     dfmax=p, gmax=length(unique(group))){
   ###
   ##############################################################################
+  screen <- screen[1L]
+  screen <- match.arg(screen, choices = c("SSR", "none", "SSR_fast"))
+  screen_rule <- switch(screen, none = 0L, SSR = 1L,
+                        SSR_fast = 2L)
+  diagnostics <- isTRUE(diagnostics)
+  profile <- isTRUE(profile)
+  transform <- match.arg(transform)
+  profile_time <- function(expr) {
+    if (!profile) {
+      return(list(value = eval.parent(substitute(expr)), elapsed = NA_real_))
+    }
+    t0 <- proc.time()
+    value <- eval.parent(substitute(expr))
+    list(value = value, elapsed = as.numeric((proc.time() - t0)[3]))
+  }
   if (nlambda < 2) 
     stop("nlambda must be at least 2", call. = FALSE)
   if (nd < 2) 
@@ -92,8 +132,13 @@ sglasso <- function(X ,Y, group=1:ncol(X),
   K <- table(group)
   group.multiplier <- sqrt(K)
   ##############################################################################
-  Ytilde <- newY(Y, family)
-  Xtilde <- newXG(X, group, group.multiplier, attr(Ytilde, "m"), bilevel)
+  preprocess_y_time <- profile_time(newY(Y, family))
+  Ytilde <- preprocess_y_time$value
+  preprocess_x_time <- profile_time(
+    newXG(X, group, group.multiplier, attr(Ytilde, "m"), bilevel,
+          standardize = standardize)
+  )
+  Xtilde <- preprocess_x_time$value
   n <- length(Ytilde)
   p <- ncol(Xtilde$X)
   K <- as.integer(table(Xtilde$g))
@@ -104,12 +149,16 @@ sglasso <- function(X ,Y, group=1:ncol(X),
   
   ###
   if (missing(lambda)) {
-    lambda_values <- lambda_sglasso(Xtilde$X,Ytilde,Xtilde$g,alpha,lambda.min.ratio,nlambda)
+    lambda_time <- profile_time(
+      lambda_sglasso(Xtilde$X,Ytilde,Xtilde$g,alpha,lambda.min.ratio,nlambda)
+    )
+    lambda_values <- lambda_time$value
     lambda <- lambda_values[[1]]
     lambda_max <- lambda_values[[2]]
     user.lambda <- FALSE
   }
   else {
+    lambda_time <- list(value = NULL, elapsed = NA_real_)
     lambda_max <- -1
     nlambda <- length(lambda)
     user.lambda <- TRUE
@@ -142,21 +191,49 @@ sglasso <- function(X ,Y, group=1:ncol(X),
   
   # [ToDo] Fit sglasso on a sequence of values using gd_sglasso_ssr 
   # (make sure the parameters carry over)
-  sglasso_fit = gd_sglasso_ssr(Xtilde$X, Ytilde,lambda,lambda_max,d, 
-                               alpha, K, K1, K0, group.multiplier, beta_start, max_iter, eps,
-                               dfmax,gmax)
+  solver_time <- profile_time(
+    gd_sglasso_ssr(Xtilde$X, Ytilde,lambda,lambda_max,d,
+                   alpha, K, K1, K0, group.multiplier, beta_start, max_iter, eps,
+                   dfmax,gmax,screen_rule,diagnostics)
+  )
+  sglasso_fit <- solver_time$value
   #min_ind <- which(lasso_fit$fmin_vec == min(lasso_fit$fmin_vec), arr.ind = TRUE)
   
   
-  beta_mat = array(NA,dim=c(P+1,nlambda,nd), 
-                   dimnames = list(c("intercept",paste("X", 1:P, sep="")),round(lambda,4),d)) 
-  ## add intercept term
-  for (a in 1:nd) {
-    b <- rbind(mean(Y), matrix(sglasso_fit$beta_mat[,,a], nrow = p))
-    bu <- unorthogonalize(b, Xtilde$X, Xtilde$g)
-    beta_mat[,,a] <- unstandardize(bu, Xtilde)
+  y_mean <- mean(Y)
+  if (transform == "eager") {
+    back_transform_time <- profile_time({
+      beta_mat <- array(NA,dim=c(P+1,nlambda,nd),
+                        dimnames = list(c("intercept",paste("X", 1:P, sep="")),round(lambda,4),d))
+      ## add intercept term
+      for (a in 1:nd) {
+        b <- rbind(y_mean, matrix(sglasso_fit$beta_mat[,,a], nrow = p))
+        bu <- unorthogonalize(b, Xtilde$X, Xtilde$g)
+        beta_mat[,,a] <- unstandardize(bu, Xtilde)
+      }
+      beta_mat
+    })
+    beta_mat <- back_transform_time$value
+  } else {
+    back_transform_time <- list(value = NULL, elapsed = if (profile) 0 else NA_real_)
+    beta_mat <- NULL
   }
   
+  screen_stats <- as.data.frame(sglasso_fit$screen_stats)
+  names(screen_stats) <- c("lambda", "d", "n_groups_total", "n_groups_active",
+                           "n_groups_working_set", "n_groups_discarded_by_screen",
+                           "n_groups_kkt_checked", "n_kkt_violations", "elapsed_time",
+                           "bcd_time", "screening_time", "kkt_checking_time",
+                           "n_bcd_iterations", "screen_rule", "d_index",
+                           "final_inactive_kkt_residual",
+                           "n_groups_kept_after_screening", "screening_rate",
+                           "kept_fraction", "has_kkt_violation", "n_refits",
+                           "n_strong_kkt_checked", "n_strong_kkt_violations",
+                           "n_rest_kkt_checked", "n_rest_kkt_violations",
+                           "n_bedpp_safe", "bedpp_safe_rate", "bedpp_time",
+                           "n_rest_kkt_candidates", "bedpp_gap",
+                           "bedpp_radius", "bedpp_mu", "bedpp_min_margin")
+  screen_stats$screen <- screen
   
   
   # [ToDo] Perform back scaling and centering to get original intercept and coefficient vector for each lambda
@@ -174,7 +251,22 @@ sglasso <- function(X ,Y, group=1:ncol(X),
              Xs = Xtilde, Ys=Ytilde,
              iter=sglasso_fit$iter,
              betas = beta_mat,
-             group=group)
+             raw_betas = if (transform == "lazy") sglasso_fit$beta_mat else NULL,
+             y_mean = y_mean,
+             group=group,
+             standardize=standardize,
+             transform=transform,
+             screen=screen,
+             diagnostics=diagnostics,
+             profile=profile,
+             profile_times=c(
+               newY = preprocess_y_time$elapsed,
+               newXG = preprocess_x_time$elapsed,
+               lambda = lambda_time$elapsed,
+               solver = solver_time$elapsed,
+               back_transform = back_transform_time$elapsed
+             ),
+             screen_stats=screen_stats)
   class(obj) = "sglasso"
   return(obj)
 }

@@ -18,6 +18,11 @@ sglasso(
   bilevel = FALSE,
   max_iter = 1e+08,
   eps = 1e-04,
+  standardize = TRUE,
+  screen = c("SSR", "none", "SSR_fast"),
+  diagnostics = FALSE,
+  profile = FALSE,
+  transform = c("eager", "lazy"),
   lambda.min.ratio = 0.005,
   dfmax = p,
   gmax = length(unique(group))
@@ -56,6 +61,31 @@ Default is 1e+08.}
 \item{eps}{Convergence threshhold.  The algorithm iterates until the BCD
 for the change in linear predictors for each coefficient is less than
 \code{eps}.  Default is \code{1e-4}.}
+
+\item{standardize}{Logical flag indicating whether \code{X} should be
+centered and scaled internally before fitting.  The default is \code{TRUE},
+preserving the usual package behavior.  Set to \code{FALSE} only when
+\code{X} has already been centered/scaled using the intended training-data
+transformation.}
+
+\item{screen}{Screening rule used before the final KKT checks. One of
+\code{"SSR"}, \code{"none"}, or \code{"SSR_fast"}. The \code{"SSR_fast"}
+mode checks the rest-set KKT conditions at the first, first-quartile,
+median, third-quartile, and final lambda values. The default is
+\code{"SSR"}.}
+
+\item{diagnostics}{Logical flag indicating whether detailed per-lambda
+timing and final inactive-set KKT residual diagnostics should be computed.
+The default is \code{FALSE} to avoid diagnostic overhead in ordinary fits.}
+
+\item{profile}{Logical flag indicating whether coarse R-level runtime
+components should be recorded. The default is \code{FALSE}.}
+
+\item{transform}{Coefficient transformation mode. The default
+\code{"eager"} returns the fitted coefficients on the original data scale
+during \code{sglasso()}. The experimental \code{"lazy"} mode stores the
+solver-scale path and performs the back-transformation when \code{coef()} is
+called, which can reduce fit-time overhead in runtime comparisons.}
 
 \item{lambda.min.ratio}{The smallest value for \code{lambda}, as a fraction of
 \code{lambda.max}.  Default is .0005.}

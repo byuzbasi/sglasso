@@ -17,6 +17,15 @@ log_msg <- function(...) {
   flush.console()
 }
 
+r_library_dir <- Sys.getenv(
+  "R_LIBRARY_DIR",
+  unset = Sys.getenv("R_LIBS_USER", unset = "")
+)
+if (nzchar(r_library_dir)) {
+  dir.create(r_library_dir, recursive = TRUE, showWarnings = FALSE)
+  .libPaths(unique(c(r_library_dir, .libPaths())))
+}
+
 ############################################################
 # 1. Source functions and load packages
 ############################################################
@@ -64,13 +73,18 @@ dir.create("logs", recursive = TRUE, showWarnings = FALSE)
 repeatnum <- as.integer(Sys.getenv("REPEATNUM", unset = "100"))
 cores <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", unset = "55"))
 cores <- max(1L, cores)
+fast_data <- tolower(Sys.getenv("FAST_DATA", unset = "TRUE")) %in%
+  c("true", "t", "1", "yes", "y")
+lambda_min_ratio <- as.numeric(Sys.getenv("LAMBDA_MIN_RATIO", unset = "0.01"))
+eps_value <- as.numeric(Sys.getenv("EPS", unset = "1e-4"))
 
 seed <- 2026
 
 # Main manuscript scenarios:
 # LD-4: sparse, often unfavorable for SGLASSO
 # LD-8: moderate sparsity, useful transition case
-# LD-16: denser active group structure, more favorable for SGLASSO
+# LD-12: denser LD active group structure
+# HD-10/HD-20/HD-40: sparse-to-dense high-dimensional settings
 paper_settings <- get_paper_settings()
 
 # Between-group correlations: include moderate and high regimes.
@@ -110,6 +124,9 @@ log_msg("Function source     : %s", source_file)
 log_msg("Output directory    : %s", outdir)
 log_msg("repeatnum          : %d", repeatnum)
 log_msg("cores              : %d", cores)
+log_msg("fast data          : %s", fast_data)
+log_msg("lambda min ratio   : %.3f", lambda_min_ratio)
+log_msg("eps                : %g", eps_value)
 log_msg("settings           : %s", paste(paper_settings$setting, collapse = ", "))
 log_msg("rho_b_grid         : %s", paste(rho_b_grid, collapse = ", "))
 log_msg("snr_grid           : %s", paste(round(snr_grid, 3), collapse = ", "))
@@ -133,6 +150,7 @@ for (i in seq_len(nrow(paper_settings))) {
   st <- paper_settings[i, ]
   
   for (criterion in tuning_criterion_grid) {
+    scenario_start <- proc.time()[3]
     
     log_msg(
       "[%d/%d] Running %s | criterion=%s | p=%d | J=%d | strong_J=%d",
@@ -172,8 +190,10 @@ for (i in seq_len(nrow(paper_settings))) {
       
       standardize = TRUE,
       tuning_criterion = criterion,
-      eps = 1e-5,
-      maxit = 1e5
+      eps = eps_value,
+      maxit = 1e5,
+      lambda_min_ratio = lambda_min_ratio,
+      fast_exchangeable_data = fast_data
     )
     
     res$setting <- st$setting
@@ -201,11 +221,21 @@ for (i in seq_len(nrow(paper_settings))) {
     )
     
     res_list[[length(res_list) + 1L]] <- res
+    log_msg(
+      "[%d/%d] Finished %s | criterion=%s | rows=%d | elapsed=%.2f min",
+      job_id,
+      n_jobs,
+      st$setting,
+      criterion,
+      nrow(res),
+      (proc.time()[3] - scenario_start) / 60
+    )
     job_id <- job_id + 1L
   }
 }
 
 all_res <- dplyr::bind_rows(res_list)
+log_msg("All simulation scenarios bound | rows=%d", nrow(all_res))
 
 ############################################################
 # 5. Save combined raw results
@@ -213,6 +243,7 @@ all_res <- dplyr::bind_rows(res_list)
 
 saveRDS(all_res, file.path(rds_dir, "all_sim_slasso_results.rds"))
 readr::write_csv(all_res, file.path(tables_dir, "all_sim_slasso_results.csv"))
+log_msg("Combined raw simulation outputs saved in %s", outdir)
 
 ############################################################
 # 6. Summary tables
@@ -282,6 +313,7 @@ saveRDS(paper_summary_overall, file.path(rds_dir, "paper_summary_overall.rds"))
 readr::write_csv(paper_summary_snr_rhob, file.path(tables_dir, "paper_summary_snr_rhob.csv"))
 readr::write_csv(paper_summary_setting, file.path(tables_dir, "paper_summary_setting.csv"))
 readr::write_csv(paper_summary_overall, file.path(tables_dir, "paper_summary_overall.csv"))
+log_msg("Simulation summary tables saved in %s", tables_dir)
 
 log_msg("Summary by setting/rho_b/SNR:")
 print(paper_summary_snr_rhob, n = Inf)

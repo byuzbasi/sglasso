@@ -59,6 +59,7 @@ En temiz yol, eski server klasorunu yedekleyip repo'yu yeniden klonlamaktir:
 
 Cikti klasorlerini olusturun:
 
+  cd /arf/scratch/byuzbasi/sglasso
   mkdir -p logs results/real_data results/main_simulation results/tuning_sensitivity results/scalability tmp
 
 
@@ -122,7 +123,7 @@ Paket versiyon kontrolu:
 
 Beklenen versiyon:
 
-  1.1.12
+  1.1.13
 
 
 5) Run script kontrolu
@@ -130,37 +131,38 @@ Beklenen versiyon:
 
 Scriptlerin parse/syntax kontrolu:
 
-  bash -n paper_codes/01_real_data/run_real_slasso_all.sh
-  bash -n paper_codes/02_main_simulation/run_sim_slasso_all.sh
-  bash -n paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
-  bash -n paper_codes/04_scalability/run_scalability_analysis.sh
-  bash -n paper_codes/submit_all_runs.sh
+  cd /arf/scratch/byuzbasi/sglasso/paper_codes
+  bash -n 01_real_data/run_real_slasso_all.sh
+  bash -n 02_main_simulation/run_sim_slasso_all.sh
+  bash -n 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+  bash -n 04_scalability/run_scalability_analysis.sh
+  bash -n submit_all_runs.sh
 
 R scriptlerinin dosya olarak bulundugunu kontrol edin:
 
-  test -f paper_codes/01_real_data/run_real_slasso_all.R
-  test -f paper_codes/02_main_simulation/run_sim_slasso.all.R
-  test -f paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R
-  test -f paper_codes/04_scalability/run_scalability_analysis.R
+  test -f 01_real_data/run_real_slasso_all.R
+  test -f 02_main_simulation/run_sim_slasso.all.R
+  test -f 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.R
+  test -f 04_scalability/run_scalability_analysis.R
 
 
 6) Kosulari gonderme
 --------------------
 
-Kok dizinden calisin:
+Once paper_codes klasorune gecin:
 
-  cd /arf/scratch/byuzbasi/sglasso
+  cd /arf/scratch/byuzbasi/sglasso/paper_codes
 
 Tek tek gondermek icin:
 
-  sbatch paper_codes/01_real_data/run_real_slasso_all.sh
-  sbatch paper_codes/02_main_simulation/run_sim_slasso_all.sh
-  sbatch paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
-  sbatch paper_codes/04_scalability/run_scalability_analysis.sh
+  sbatch 01_real_data/run_real_slasso_all.sh
+  sbatch 02_main_simulation/run_sim_slasso_all.sh
+  sbatch 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+  sbatch 04_scalability/run_scalability_analysis.sh
 
 Hepsini arka arkaya gondermek icin:
 
-  bash paper_codes/submit_all_runs.sh
+  bash submit_all_runs.sh
 
 Onemli:
   .sh dosyalari paper_codes altinda dursa da varsayilan calisma dizini
@@ -173,23 +175,23 @@ Onemli:
 
 Ana simulasyon tekrar sayisi:
 
-  sbatch --export=ALL,REPEATNUM=50 paper_codes/02_main_simulation/run_sim_slasso_all.sh
+  sbatch --export=ALL,REPEATNUM=50 02_main_simulation/run_sim_slasso_all.sh
 
 Tuning sensitivity tekrar sayisi:
 
-  sbatch --export=ALL,NREP=10 paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+  sbatch --export=ALL,NREP=10 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
 
 Scalability d degeri:
 
-  sbatch --export=ALL,NREP=10,D_VALUE=0.5 paper_codes/04_scalability/run_scalability_analysis.sh
+  sbatch --export=ALL,NREP=10,D_VALUE=0.5 04_scalability/run_scalability_analysis.sh
 
 R module override:
 
-  sbatch --export=ALL,R_MODULE=apps/R/4.4.0-gcc-12.2.0 paper_codes/04_scalability/run_scalability_analysis.sh
+  sbatch --export=ALL,R_MODULE=apps/R/4.4.0-gcc-12.2.0 04_scalability/run_scalability_analysis.sh
 
 R kutuphane yolu override:
 
-  sbatch --export=ALL,R_LIBS_USER=/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3 paper_codes/02_main_simulation/run_sim_slasso_all.sh
+  sbatch --export=ALL,R_LIBS_USER=/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3 02_main_simulation/run_sim_slasso_all.sh
 
 
 8) Cikti yapisi
@@ -219,6 +221,17 @@ Beklenen onemli cikti dosyalari:
   results/tuning_sensitivity/summary_tune_scenario_table.csv
   results/scalability/scalability_summary.csv
 
+Ara kayit / checkpoint dosyalari:
+
+  results/real_data/*_raw_results.rds
+  results/main_simulation/rds/*.rds
+  results/tuning_sensitivity/task_rds/task_*.rds
+  results/scalability/checkpoints/task_*.rds
+
+Not: Scalability ve tuning sensitivity kosularinda her task bittiginde
+ayri bir .rds dosyasi yazilir. Job zaman limitine takilirsa tamamlanan
+task sonuclari bu klasorlerden geri okunabilir.
+
 
 9) Job izleme
 -------------
@@ -233,8 +246,8 @@ Job detayini gormek:
 
 Loglari canli izlemek:
 
-  tail -f logs/*JOBID*.out
-  tail -f logs/*JOBID*.err
+  tail -f logs/*5911343*.out
+  tail -f logs/*5911343*.err
 
 Son 160 satiri okumak:
 
@@ -243,8 +256,8 @@ Son 160 satiri okumak:
 
 Ornek:
 
-  tail -n 160 logs/*5908409*.out
-  tail -n 160 logs/*5908409*.err
+  tail -n 160 logs/*5908492*.out
+  tail -n 160 logs/*5908492*.err
 
 Tamamlanan job durumunu gormek:
 
@@ -274,11 +287,12 @@ Kontrol:
 
   pwd
   ls
-  ls paper_codes/04_scalability
+  ls 04_scalability
 
 Dogru submit:
 
-  sbatch paper_codes/04_scalability/run_scalability_analysis.sh
+  cd /arf/scratch/byuzbasi/sglasso/paper_codes
+  sbatch 04_scalability/run_scalability_analysis.sh
 
 
 Hata:
@@ -287,9 +301,9 @@ Hata:
 
 Kontrol:
 
-  ls paper_codes/02_main_simulation/sglasso_sim_function_full_tuning.R
-  ls paper_codes/03_tuning_sensitivity/sglasso_sim_function_full_tuning.R
-  ls paper_codes/04_scalability/sglasso_sim_function_full_tuning.R
+  ls 02_main_simulation/sglasso_sim_function_full_tuning.R
+  ls 03_tuning_sensitivity/sglasso_sim_function_full_tuning.R
+  ls 04_scalability/sglasso_sim_function_full_tuning.R
 
 
 Hata:
@@ -325,19 +339,25 @@ Gerekirse yeniden kurulum:
 
 Scalability kisa test:
 
-  sbatch --export=ALL,P_GRID=1000,J_GRID=200,NREP=1,NLAMBDA=3,OUTDIR=results/scalability_test paper_codes/04_scalability/run_scalability_analysis.sh
+  cd /arf/scratch/byuzbasi/sglasso/paper_codes
+  sbatch --export=ALL,P_GRID=1000,J_GRID=200,NREP=1,NLAMBDA=3,CORES=2,OUTDIR=results/scalability_test 04_scalability/run_scalability_analysis.sh
+
+Scalability final kosu varsayilan olarak SLURM_CPUS_PER_TASK kadar
+cekirdegi kullanir. Mevcut dosyada bu deger 56'dir. Gerekirse elle:
+
+  sbatch --export=ALL,CORES=56 04_scalability/run_scalability_analysis.sh
 
 Tuning sensitivity kisa test:
 
-  sbatch --export=ALL,NREP=1,CORES=1,OUTDIR=results/tuning_sensitivity_test paper_codes/03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
+  sbatch --export=ALL,NREP=1,CORES=1,OUTDIR=results/tuning_sensitivity_test 03_tuning_sensitivity/run_sglasso_tuning_sensitivity.sh
 
 Ana simulasyon kisa test:
 
-  sbatch --export=ALL,REPEATNUM=1,OUTDIR=results/main_simulation_test paper_codes/02_main_simulation/run_sim_slasso_all.sh
+  sbatch --export=ALL,REPEATNUM=1,OUTDIR=results/main_simulation_test 02_main_simulation/run_sim_slasso_all.sh
 
 Gercek veri kisa test:
 
-  sbatch --export=ALL,NREP=1,OUTDIR=results/real_data_test paper_codes/01_real_data/run_real_slasso_all.sh
+  sbatch --export=ALL,NREP=1,OUTDIR=results/real_data_test 01_real_data/run_real_slasso_all.sh
 
 
 12) Notlar

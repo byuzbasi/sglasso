@@ -22,6 +22,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// orthogonalize_c
+List orthogonalize_c(const arma::mat& X, const arma::uvec& group);
+RcppExport SEXP _sglasso_orthogonalize_c(SEXP XSEXP, SEXP groupSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group(groupSEXP);
+    rcpp_result_gen = Rcpp::wrap(orthogonalize_c(X, group));
+    return rcpp_result_gen;
+END_RCPP
+}
 // lambda_max_c
 double lambda_max_c(const arma::mat& Xtilde, const arma::colvec& Ytilde, const arma::colvec& K, const arma::colvec& K1);
 RcppExport SEXP _sglasso_lambda_max_c(SEXP XtildeSEXP, SEXP YtildeSEXP, SEXP KSEXP, SEXP K1SEXP) {
@@ -37,8 +49,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // gd_sglasso_ssr
-List gd_sglasso_ssr(const arma::mat& Xtilde, const arma::colvec& Ytilde, const arma::colvec lambda, const double lambda_max, const arma::colvec d, const double alpha, const arma::colvec& K, const arma::colvec& K1, const arma::uword& K0, const arma::colvec& gm, const arma::colvec& beta_start, const double max_iter, const double eps, const arma::uword& dfmax, const arma::uword& gmax);
-RcppExport SEXP _sglasso_gd_sglasso_ssr(SEXP XtildeSEXP, SEXP YtildeSEXP, SEXP lambdaSEXP, SEXP lambda_maxSEXP, SEXP dSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP K1SEXP, SEXP K0SEXP, SEXP gmSEXP, SEXP beta_startSEXP, SEXP max_iterSEXP, SEXP epsSEXP, SEXP dfmaxSEXP, SEXP gmaxSEXP) {
+List gd_sglasso_ssr(const arma::mat& Xtilde, const arma::colvec& Ytilde, const arma::colvec lambda, const double lambda_max, const arma::colvec d, const double alpha, const arma::colvec& K, const arma::colvec& K1, const arma::uword& K0, const arma::colvec& gm, const arma::colvec& beta_start, const double max_iter, const double eps, const arma::uword& dfmax, const arma::uword& gmax, const int screen_rule, const bool diagnostics);
+RcppExport SEXP _sglasso_gd_sglasso_ssr(SEXP XtildeSEXP, SEXP YtildeSEXP, SEXP lambdaSEXP, SEXP lambda_maxSEXP, SEXP dSEXP, SEXP alphaSEXP, SEXP KSEXP, SEXP K1SEXP, SEXP K0SEXP, SEXP gmSEXP, SEXP beta_startSEXP, SEXP max_iterSEXP, SEXP epsSEXP, SEXP dfmaxSEXP, SEXP gmaxSEXP, SEXP screen_ruleSEXP, SEXP diagnosticsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -57,15 +69,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type eps(epsSEXP);
     Rcpp::traits::input_parameter< const arma::uword& >::type dfmax(dfmaxSEXP);
     Rcpp::traits::input_parameter< const arma::uword& >::type gmax(gmaxSEXP);
-    rcpp_result_gen = Rcpp::wrap(gd_sglasso_ssr(Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax));
+    Rcpp::traits::input_parameter< const int >::type screen_rule(screen_ruleSEXP);
+    Rcpp::traits::input_parameter< const bool >::type diagnostics(diagnosticsSEXP);
+    rcpp_result_gen = Rcpp::wrap(gd_sglasso_ssr(Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax, screen_rule, diagnostics));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sglasso_std_c", (DL_FUNC) &_sglasso_std_c, 1},
+    {"_sglasso_orthogonalize_c", (DL_FUNC) &_sglasso_orthogonalize_c, 2},
     {"_sglasso_lambda_max_c", (DL_FUNC) &_sglasso_lambda_max_c, 4},
-    {"_sglasso_gd_sglasso_ssr", (DL_FUNC) &_sglasso_gd_sglasso_ssr, 15},
+    {"_sglasso_gd_sglasso_ssr", (DL_FUNC) &_sglasso_gd_sglasso_ssr, 17},
     {NULL, NULL, 0}
 };
 

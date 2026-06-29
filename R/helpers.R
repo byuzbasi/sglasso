@@ -6,7 +6,7 @@
 ## The reason they are copied here is because they are internal functions
 ## and hence are not exported into the global environment.
 ## The original comments and header are preserved.
-newXG <- function(X, g, m, ncolY, bilevel) {
+newXG <- function(X, g, m, ncolY, bilevel, standardize = TRUE) {
   # Prepare the predictor matrix and keep the bookkeeping needed to map
   # solver coefficients back to the user's original column order and scale.
   if (!inherits(X, "matrix")) {
@@ -29,16 +29,23 @@ newXG <- function(X, g, m, ncolY, bilevel) {
   
   #.Call("std_c",X)
   
-  # Feature-level standardization is performed before the C++ solver. Constant
-  # columns are dropped here and later restored as zero coefficients.
-  std <- std_c(X)
-  XX <- std[[1]]
-  center <- std[[2]]
-  scale <- std[[3]]
-  nz <- which(scale > 1e-6)                # non-constant columns
-  if (length(nz) != ncol(X)) {
-    XX <- XX[, nz, drop=FALSE]
-    G <- subsetG(G, nz)
+  if (standardize) {
+    # Feature-level standardization is performed before the C++ solver. Constant
+    # columns are dropped here and later restored as zero coefficients.
+    std <- std_c(X)
+    XX <- std[[1]]
+    center <- std[[2]]
+    scale <- std[[3]]
+    nz <- which(scale > 1e-6)                # non-constant columns
+    if (length(nz) != ncol(X)) {
+      XX <- XX[, nz, drop=FALSE]
+      G <- subsetG(G, nz)
+    }
+  } else {
+    XX <- X
+    center <- rep(0, ncol(X))
+    scale <- rep(1, ncol(X))
+    nz <- seq_len(ncol(X))
   }
   
   # Reorder columns so each group is contiguous, matching the block-coordinate
@@ -186,40 +193,60 @@ newY <- function(y, family) {
 # Orthogonalize each penalized group with an SVD transform. This improves the
 # group update geometry and records the transform for coefficient recovery.
 orthogonalize <- function(X, group) {
-  n <- nrow(X)
-  J <- max(group)
-  T <- vector("list", J)
-  XX <- matrix(0, nrow=nrow(X), ncol=ncol(X))
-  XX[, which(group==0)] <- X[, which(group==0)]
-  for (j in seq_along(integer(J))) {
-    ind <- which(group==j)
-    if (length(ind)==0) next
-    SVD <- svd(X[, ind, drop=FALSE], nu=0)
-    r <- which(SVD$d > 1e-10)
-    T[[j]] <- sweep(SVD$v[, r, drop=FALSE], 2, sqrt(n)/SVD$d[r], "*")
-    XX[, ind[r]] <- X[, ind] %*% T[[j]]
-  }
-  nz <- !apply(XX==0, 2, all)
-  XX <- XX[, nz, drop=FALSE]
-  attr(XX, "T") <- T
-  attr(XX, "group") <- group[nz]
+  out <- orthogonalize_c(X, as.integer(group))
+  XX <- out$X
+  attr(XX, "T") <- out$T
+  attr(XX, "group") <- out$group
   XX
 }
 
 # Map coefficients from the orthogonalized basis back to the standardized
 # feature basis.
-unorthogonalize <- function(b, XX, group, intercept=TRUE) {
+unorthogonalize <- function(b, XX, group, intercept=TRUE, Tmat = NULL) {
   ind <- !sapply(attr(XX, "T"), is.null)
-  T <- bdiag(attr(XX, "T")[ind])
+  if (!is.null(Tmat)) {
+    T <- Tmat
+    if (intercept) {
+      ind0 <- c(1, 1+which(group==0))
+      val <- Matrix::as.matrix(rbind(b[ind0, , drop=FALSE], T %*% b[-ind0, , drop=FALSE]))
+    } else if (sum(group==0)) {
+      ind0 <- which(group==0)
+      val <- Matrix::as.matrix(rbind(b[ind0, , drop=FALSE], T %*% b[-ind0, , drop=FALSE]))
+    } else {
+      val <- as.matrix(T %*% b)
+    }
+    return(val)
+  }
+
+  T_list <- attr(XX, "T")
+  group0 <- which(group == 0)
+  offset <- if (intercept) 1L else 0L
   if (intercept) {
     ind0 <- c(1, 1+which(group==0))
-    val <- Matrix::as.matrix(rbind(b[ind0, , drop=FALSE], T %*% b[-ind0, , drop=FALSE]))
+    penalized_b <- b[-ind0, , drop=FALSE]
+    val <- matrix(0, nrow = length(ind0) + sum(vapply(T_list[ind], nrow, integer(1))), ncol = ncol(b))
+    val[seq_along(ind0), ] <- b[ind0, , drop=FALSE]
   } else if (sum(group==0)) {
     ind0 <- which(group==0)
-    val <- Matrix::as.matrix(rbind(b[ind0, , drop=FALSE], T %*% b[-ind0, , drop=FALSE]))
+    penalized_b <- b[-ind0, , drop=FALSE]
+    val <- matrix(0, nrow = length(ind0) + sum(vapply(T_list[ind], nrow, integer(1))), ncol = ncol(b))
+    val[seq_along(ind0), ] <- b[ind0, , drop=FALSE]
   } else {
-    val <- as.matrix(T %*% b)
+    ind0 <- integer(0)
+    penalized_b <- b
+    val <- matrix(0, nrow = sum(vapply(T_list[ind], nrow, integer(1))), ncol = ncol(b))
   }
+
+  src_start <- 1L
+  dst_start <- length(ind0) + 1L
+  for (Tg in T_list[ind]) {
+    src_end <- src_start + ncol(Tg) - 1L
+    dst_end <- dst_start + nrow(Tg) - 1L
+    val[dst_start:dst_end, ] <- Tg %*% penalized_b[src_start:src_end, , drop=FALSE]
+    src_start <- src_end + 1L
+    dst_start <- dst_end + 1L
+  }
+  val
 }
 
 # Undo feature-level standardization and reconstruct the intercept on the

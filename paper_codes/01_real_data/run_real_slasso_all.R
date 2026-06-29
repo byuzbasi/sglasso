@@ -11,10 +11,21 @@
 options(stringsAsFactors = FALSE)
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
+log_msg <- function(...) {
+  cat(sprintf("[%s] ", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
+      sprintf(...), "\n", sep = "")
+  flush.console()
+}
+
 user_lib <- Sys.getenv("R_LIBS_USER")
 if (nzchar(user_lib)) {
   dir.create(user_lib, recursive = TRUE, showWarnings = FALSE)
   .libPaths(c(user_lib, .libPaths()))
+}
+r_library_dir <- Sys.getenv("R_LIBRARY_DIR", unset = "")
+if (nzchar(r_library_dir)) {
+  dir.create(r_library_dir, recursive = TRUE, showWarnings = FALSE)
+  .libPaths(unique(c(r_library_dir, .libPaths())))
 }
 
 # -----------------------------
@@ -42,14 +53,8 @@ if (!is.na(slurm_cpus) && nzchar(slurm_cpus)) {
 
 dir.create(OUTDIR, showWarnings = FALSE, recursive = TRUE)
 
-cat("\n============================================================\n")
-cat("Real-data grouped penalized regression benchmark\n")
-cat("Started:", format(Sys.time()), "\n")
-cat("nrep   :", NREP, "\n")
-cat("seed   :", SEED, "\n")
-cat("ncores :", NCORES, "\n")
-cat("outdir :", OUTDIR, "\n")
-cat("============================================================\n\n")
+log_msg("Real-data grouped penalized regression benchmark started")
+log_msg("nrep=%d; seed=%d; ncores=%d; outdir=%s", NREP, SEED, NCORES, OUTDIR)
 
 # -----------------------------
 # 1. Source benchmark function
@@ -141,13 +146,13 @@ summarise_results <- function(df) {
 }
 
 save_one_dataset <- function(dataset_name, X, y, group, nrep = NREP, seed = SEED) {
-  cat("\n------------------------------------------------------------\n")
-  cat("Dataset:", dataset_name, "\n")
-  cat("n      :", nrow(X), "\n")
-  cat("p      :", ncol(X), "\n")
-  cat("groups :", length(unique(group)), "\n")
-  cat("start  :", format(Sys.time()), "\n")
-  cat("------------------------------------------------------------\n")
+  log_msg(
+    "Dataset %s started | n=%d | p=%d | groups=%d",
+    dataset_name,
+    nrow(X),
+    ncol(X),
+    length(unique(group))
+  )
 
   dataset_dir <- file.path(OUTDIR, dataset_name)
   dir.create(dataset_dir, showWarnings = FALSE, recursive = TRUE)
@@ -179,7 +184,7 @@ save_one_dataset <- function(dataset_name, X, y, group, nrep = NREP, seed = SEED
       )
     },
     error = function(e) {
-      cat("ERROR in", dataset_name, ":", conditionMessage(e), "\n")
+      log_msg("Dataset %s failed: %s", dataset_name, conditionMessage(e))
       err <- list(
         dataset = dataset_name,
         message = conditionMessage(e),
@@ -192,7 +197,7 @@ save_one_dataset <- function(dataset_name, X, y, group, nrep = NREP, seed = SEED
   )
 
   if (is.null(result)) {
-    cat("Dataset failed:", dataset_name, "\n")
+    log_msg("Dataset %s finished with status=failed", dataset_name)
     return(invisible(NULL))
   }
 
@@ -215,11 +220,10 @@ save_one_dataset <- function(dataset_name, X, y, group, nrep = NREP, seed = SEED
 
   saveRDS(meta, meta_file)
 
-  cat("Saved raw RDS    :", rds_file, "\n")
-  cat("Saved raw CSV    :", csv_file, "\n")
-  cat("Saved summary CSV:", summary_csv_file, "\n")
-  cat("elapsed minutes  :", round(meta$elapsed_minutes, 3), "\n")
-  cat("end              :", format(Sys.time()), "\n")
+  log_msg("Dataset %s saved raw RDS: %s", dataset_name, rds_file)
+  log_msg("Dataset %s saved raw CSV: %s", dataset_name, csv_file)
+  log_msg("Dataset %s saved summary CSV: %s", dataset_name, summary_csv_file)
+  log_msg("Dataset %s finished | elapsed=%.3f min", dataset_name, meta$elapsed_minutes)
 
   invisible(result)
 }
@@ -294,6 +298,7 @@ all_status <- data.frame(
 
 for (nm in names(datasets)) {
   dat <- datasets[[nm]]
+  dataset_start <- proc.time()[3]
 
   ans <- save_one_dataset(
     dataset_name = nm,
@@ -318,6 +323,15 @@ for (nm in names(datasets)) {
 
   write.csv(all_status, file.path(OUTDIR, "run_status.csv"), row.names = FALSE)
   saveRDS(all_status, file.path(OUTDIR, "run_status.rds"))
+
+  log_msg(
+    "Run status updated | dataset=%s | status=%s | completed=%d/%d | elapsed=%.3f min",
+    nm,
+    if (is.null(ans)) "failed" else "completed",
+    nrow(all_status),
+    length(datasets),
+    (proc.time()[3] - dataset_start) / 60
+  )
 }
 
 # -----------------------------
@@ -353,12 +367,12 @@ if (length(raw_files) > 0) {
 
   saveRDS(combined_summary, file.path(OUTDIR, "ALL_summary.rds"))
   write.csv(combined_summary, file.path(OUTDIR, "ALL_summary.csv"), row.names = FALSE)
+  log_msg("Combined outputs saved | datasets=%d | rows=%d", length(raw_files), nrow(combined))
 }
 
 sink_file <- file.path(OUTDIR, "sessionInfo.txt")
 writeLines(capture.output(sessionInfo()), sink_file)
 
-cat("\n============================================================\n")
-cat("All datasets finished:", format(Sys.time()), "\n")
-cat("Outputs saved in:", OUTDIR, "\n")
-cat("============================================================\n")
+log_msg("Session info saved: %s", sink_file)
+log_msg("All real-data datasets finished")
+log_msg("Outputs saved in: %s", OUTDIR)

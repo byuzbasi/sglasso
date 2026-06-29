@@ -45,7 +45,8 @@ select.sglasso <- function(obj,
     stop("df length does not match lambda-by-d grid.")
   }
   
-  d_obj <- dim(obj$betas)
+  beta_all <- coef(obj, drop = FALSE)
+  d_obj <- dim(beta_all)
   p <- d_obj[1] - 1
   
   IC <- switch(
@@ -118,7 +119,7 @@ select.sglasso <- function(obj,
         group <- obj$group
         J <- length(unique(group))
         
-        beta_path <- obj$betas[-1, , , drop = FALSE]
+        beta_path <- beta_all[-1, , , drop = FALSE]
         
         selected_groups <- apply(
           beta_path,
@@ -157,7 +158,7 @@ select.sglasso <- function(obj,
   }
   
   list(
-    beta = obj$betas[, min_ind[1], min_ind[2]],
+    beta = beta_all[, min_ind[1], min_ind[2]],
     lambda = obj$lambda[min_ind[1]],
     d = obj$d[min_ind[2]],
     df = obj$df[min_ind[1], min_ind[2]],

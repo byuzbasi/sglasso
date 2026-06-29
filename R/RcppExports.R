@@ -5,11 +5,15 @@ std_c <- function(x) {
     .Call(`_sglasso_std_c`, x)
 }
 
+orthogonalize_c <- function(X, group) {
+    .Call(`_sglasso_orthogonalize_c`, X, group)
+}
+
 lambda_max_c <- function(Xtilde, Ytilde, K, K1) {
     .Call(`_sglasso_lambda_max_c`, Xtilde, Ytilde, K, K1)
 }
 
-gd_sglasso_ssr <- function(Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax) {
-    .Call(`_sglasso_gd_sglasso_ssr`, Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax)
+gd_sglasso_ssr <- function(Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax, screen_rule, diagnostics) {
+    .Call(`_sglasso_gd_sglasso_ssr`, Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax, screen_rule, diagnostics)
 }
 

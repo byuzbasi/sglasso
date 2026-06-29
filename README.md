@@ -29,6 +29,17 @@ If you see a gfortran-related error, refer to the [gfortran installation
 guide](https://byuzbasi.github.io/sglasso/help/gfortran_installation_guide.html)
 to fix it.
 
+## Screening rules
+
+`sglasso()` includes optional screening rules through the `screen` argument:
+`"shifted_SSR"`, `"shifted_SSR_fast"`, and `"none"`. The shifted SSR rule
+accounts for the shifted ridge component in the SGLASSO penalty. Screening rules
+are most useful for large-scale problems with many inactive groups. For small or
+moderate problems, `screen = "none"` may be equally fast or faster because it
+avoids screening overhead while the final KKT checks still enforce the fitted
+solution. The `shifted_SSR_fast` option is experimental and delays rest-set KKT
+checks to study the speed-accuracy trade-off.
+
 ## Example
 
 This is a basic example which shows you how to solve a common problem:

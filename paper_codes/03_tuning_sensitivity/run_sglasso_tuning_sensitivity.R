@@ -20,6 +20,15 @@ if (is.na(script_file)) {
   }
 }
 
+r_library_dir <- Sys.getenv(
+  "R_LIBRARY_DIR",
+  unset = Sys.getenv("R_LIBS_USER", unset = "")
+)
+if (nzchar(r_library_dir)) {
+  dir.create(r_library_dir, recursive = TRUE, showWarnings = FALSE)
+  .libPaths(unique(c(r_library_dir, .libPaths())))
+}
+
 script_dir <- dirname(script_file)
 source_file <- file.path(script_dir, "sglasso_sim_function_full_tuning.R")
 if (!file.exists(source_file)) {
@@ -54,8 +63,18 @@ get_arg <- function(name, default) {
 
 repeatnum <- as.integer(get_arg("nrep", "5"))
 seed <- as.integer(get_arg("seed", "2026"))
+lambda_min_ratio <- as.numeric(get_arg(
+  "lambda_min_ratio",
+  Sys.getenv("LAMBDA_MIN_RATIO", unset = "0.01")
+))
+eps_value <- as.numeric(get_arg(
+  "eps",
+  Sys.getenv("EPS", unset = "1e-4")
+))
 OUTDIR <- get_arg("outdir", "results/tuning_sensitivity")
 dir.create(OUTDIR, recursive = TRUE, showWarnings = FALSE)
+CHECKPOINT_DIR <- file.path(OUTDIR, "task_rds")
+dir.create(CHECKPOINT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 slurm_cpus <- suppressWarnings(
   as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA))
@@ -109,7 +128,28 @@ task_grid <- expand.grid(
 )
 
 log_msg("Total SGLASSO tuning tasks: %d", nrow(task_grid))
-log_msg("Settings: nrep=%d, seed=%d, cores=%d", repeatnum, seed, cores)
+log_msg(
+  "Settings: nrep=%d, seed=%d, cores=%d, lambda_min_ratio=%.3f, eps=%g",
+  repeatnum,
+  seed,
+  cores,
+  lambda_min_ratio,
+  eps_value
+)
+log_msg("Output directory: %s", OUTDIR)
+log_msg("Task checkpoint directory: %s", CHECKPOINT_DIR)
+log_msg(
+  "Task grid: settings=%s; criteria=%s; rho_b=%s; snr=%s; signals=%s",
+  paste(paper_settings$setting, collapse = ","),
+  paste(tuning_criterion_grid, collapse = ","),
+  paste(rho_b_grid, collapse = ","),
+  paste(round(snr_grid, 3), collapse = ","),
+  paste(signal_pattern_grid, collapse = ",")
+)
+
+safe_file_part <- function(x) {
+  gsub("[^A-Za-z0-9._-]+", "_", as.character(x))
+}
 
 ############################################################
 # One SGLASSO-only task
@@ -129,6 +169,18 @@ run_one_sglasso_tuning_task <- function(ii) {
   snr_i <- as.numeric(task$snr[[1]])
   signal_i <- as.character(task$signal_pattern[[1]])
   rep_i <- as.integer(task$rep_id[[1]])
+  task_start <- proc.time()[3]
+  
+  log_msg(
+    "[%d/%d] Tuning task started | setting=%s | criterion=%s | rho_b=%.3f | snr=%.3f | rep=%d",
+    ii,
+    nrow(task_grid),
+    st$setting,
+    criterion_i,
+    rho_b_i,
+    snr_i,
+    rep_i
+  )
   
   set.seed(seed + ii)
   
@@ -170,16 +222,17 @@ run_one_sglasso_tuning_task <- function(ii) {
   ##########################################################
   
   fits <- lapply(alpha_seq, function(a) {
-    sglasso::sglasso(
+    call_sglasso(
       X = std_dat$X_train,
       Y = std_dat$y_train,
       group = dat$group,
       nlambda = nlambda,
       alpha = a,
       d = d_seq,
-      eps = 1e-5,
+      eps = eps_value,
       max_iter = 1e5,
-      lambda.min = 0.05
+      standardize = !isTRUE(std_dat$standardized),
+      lambda.min.ratio = lambda_min_ratio
     )
   })
   
@@ -368,6 +421,32 @@ run_one_sglasso_tuning_task <- function(ii) {
   res$signal_pattern <- signal_i
   res$corrmat_type <- "Exchangeable"
   res$standardize <- TRUE
+  res$task_id <- ii
+  
+  checkpoint_file <- file.path(
+    CHECKPOINT_DIR,
+    sprintf(
+      "task_%04d_setting_%s_criterion_%s_rhob_%s_snr_%s_rep_%03d.rds",
+      ii,
+      safe_file_part(st$setting),
+      safe_file_part(criterion_i),
+      safe_file_part(sprintf("%.3f", rho_b_i)),
+      safe_file_part(sprintf("%.3f", snr_i)),
+      rep_i
+    )
+  )
+  saveRDS(res, checkpoint_file)
+  
+  log_msg(
+    "[%d/%d] Tuning task finished | setting=%s | criterion=%s | rows=%d | elapsed=%.2f sec | checkpoint=%s",
+    ii,
+    nrow(task_grid),
+    st$setting,
+    criterion_i,
+    nrow(res),
+    proc.time()[3] - task_start,
+    checkpoint_file
+  )
   
   res
 }
@@ -376,8 +455,11 @@ run_one_sglasso_tuning_task <- function(ii) {
 # Run all tasks
 ############################################################
 
+tuning_start <- proc.time()[3]
+
 if (cores > 1) {
   
+  log_msg("Starting parallel tuning tasks with %d workers", cores)
   doParallel::registerDoParallel(cores = cores)
   doRNG::registerDoRNG(seed)
   
@@ -392,6 +474,9 @@ if (cores > 1) {
       "alpha_seq",
       "d_seq",
       "nlambda",
+      "CHECKPOINT_DIR",
+      "log_msg",
+      "safe_file_part",
       "run_one_sglasso_tuning_task"
     )
   ) %dopar% {
@@ -402,10 +487,17 @@ if (cores > 1) {
   
 } else {
   
+  log_msg("Starting serial tuning tasks")
   all_tune <- dplyr::bind_rows(
     lapply(seq_len(nrow(task_grid)), run_one_sglasso_tuning_task)
   )
 }
+
+log_msg(
+  "Finished tuning tasks | rows=%d | elapsed=%.2f min",
+  nrow(all_tune),
+  (proc.time()[3] - tuning_start) / 60
+)
 
 ############################################################
 # Save raw results
@@ -420,6 +512,8 @@ readr::write_csv(
   all_tune,
   file.path(OUTDIR, "sglasso_tuning_all_raw.csv")
 )
+
+log_msg("Raw tuning outputs saved in %s", OUTDIR)
 
 ############################################################
 # Summaries

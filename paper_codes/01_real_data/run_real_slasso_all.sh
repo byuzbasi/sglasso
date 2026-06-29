@@ -2,6 +2,7 @@
 #SBATCH --job-name=real_slasso
 #SBATCH --partition=hamsi
 #SBATCH --clusters=arf
+#SBATCH --chdir=..
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -32,7 +33,14 @@ log_msg "Start time      : $(date)"
 log_msg "=================================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_WORKDIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
+if [ "$(basename "$SUBMIT_DIR")" = "paper_codes" ]; then
+  DEFAULT_WORKDIR="$(cd "${SUBMIT_DIR}/.." && pwd)"
+elif [ -d "${SUBMIT_DIR}/paper_codes" ]; then
+  DEFAULT_WORKDIR="$SUBMIT_DIR"
+else
+  DEFAULT_WORKDIR="$(pwd)"
+fi
 WORKDIR="${WORKDIR:-$DEFAULT_WORKDIR}"
 
 mkdir -p "${WORKDIR}/logs"
@@ -59,8 +67,9 @@ else
   log_msg "Environment modules are not available; using current R environment."
 fi
 
-export R_LIBS_USER="${R_LIBS_USER:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
-export R_LIBS="${R_LIBS:-$R_LIBS_USER}"
+R_LIBRARY_DIR="${R_LIBRARY_DIR:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
+export R_LIBS_USER="${R_LIBRARY_DIR}"
+export R_LIBS="${R_LIBRARY_DIR}"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
@@ -74,6 +83,9 @@ OUTDIR="${OUTDIR:-results/real_data}"
 if [ -f "${SCRIPT_DIR}/run_real_slasso_all.R" ]; then
   RSCRIPT_FILE="${SCRIPT_DIR}/run_real_slasso_all.R"
   RFUNCTION_FILE="${SCRIPT_DIR}/sglasso_real_function.R"
+elif [ -f "paper_codes/01_real_data/run_real_slasso_all.R" ]; then
+  RSCRIPT_FILE="paper_codes/01_real_data/run_real_slasso_all.R"
+  RFUNCTION_FILE="paper_codes/01_real_data/sglasso_real_function.R"
 elif [ -f "run_real_slasso_all.R" ]; then
   RSCRIPT_FILE="run_real_slasso_all.R"
   RFUNCTION_FILE="sglasso_real_function.R"
@@ -91,6 +103,8 @@ log_msg "OPENBLAS_NUM_THREADS   : ${OPENBLAS_NUM_THREADS}"
 log_msg "MKL_NUM_THREADS        : ${MKL_NUM_THREADS}"
 log_msg "R executable           : $(which Rscript)"
 log_msg "R version              : $(Rscript --version 2>&1)"
+R_LIB_PATHS="$(Rscript --vanilla -e 'cat(paste(.libPaths(), collapse = " | "))')"
+log_msg "R library paths        : ${R_LIB_PATHS}"
 log_msg "R script               : ${RSCRIPT_FILE}"
 
 log_msg "Checking required files..."

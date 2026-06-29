@@ -20,6 +20,8 @@ cv.sglasso(
   bilevel = FALSE,
   max_iter = 1e+08,
   eps = 1e-04,
+  standardize = TRUE,
+  screen = c("SSR", "none", "SSR_fast"),
   ...
 )
 }
@@ -53,6 +55,11 @@ cv.sglasso(
 \item{max_iter}{Maximum number of iterations.}
 
 \item{eps}{Convergence tolerance.}
+
+\item{standardize}{Logical flag indicating whether \code{X} should be
+centered and scaled internally before fitting.}
+
+\item{screen}{Screening rule passed to \code{\link{sglasso}}.}
 
 \item{...}{Additional arguments.}
 }

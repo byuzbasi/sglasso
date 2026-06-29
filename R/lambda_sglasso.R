@@ -6,8 +6,7 @@ lambda_sglasso <- function(X, y, group, alpha, lambda.min, nlambda) {
   K1 <- c(0, cumsum(K))
 
   # Start the path at lambda.max, where the null Gaussian model is active.
-  fit <- glm(y~1, family="gaussian")
-  r <- fit$residuals
+  r <- y - mean(y)
   zmax <- lambda_max_c(X,r,K,K1)/n
 
   # alpha=0 is a ridge-only edge case; use a tiny positive value so the

@@ -19,6 +19,9 @@
 #' @param bilevel Logical; whether bilevel selection is used.
 #' @param max_iter Maximum number of iterations.
 #' @param eps Convergence tolerance.
+#' @param standardize Logical flag indicating whether \code{X} should be
+#' centered and scaled internally before fitting.
+#' @param screen Screening rule passed to \code{\link{sglasso}}.
 #' @param ... Additional arguments.
 #'
 #' @return An object of class \code{cv.sglasso}.
@@ -49,8 +52,12 @@ cv.sglasso <- function(
     bilevel = FALSE,
     max_iter = 1e8,
     eps = 1e-4,
+    standardize = TRUE,
+    screen = c("SSR", "none", "SSR_fast"),
     ...
 ) {
+  screen <- screen[1L]
+  screen <- match.arg(screen, choices = c("SSR", "none", "SSR_fast"))
   
   fit_sglasso <- sglasso(
     X = X,
@@ -65,7 +72,9 @@ cv.sglasso <- function(
     family = family,
     bilevel = bilevel,
     max_iter = max_iter,
-    eps = eps
+    eps = eps,
+    standardize = standardize,
+    screen = screen
   )
   
   XG <- fit_sglasso$Xs
@@ -76,7 +85,7 @@ cv.sglasso <- function(
   n <- nrow(X)
   lambda <- fit_sglasso$lambda
   d <- fit_sglasso$d
-  betas <- fit_sglasso$betas
+  betas <- coef(fit_sglasso, drop = FALSE)
   alpha <- fit_sglasso$alpha
   
   nlambda_eff <- length(lambda)
@@ -114,7 +123,9 @@ cv.sglasso <- function(
       family = family,
       bilevel = bilevel,
       max_iter = max_iter,
-      eps = eps
+      eps = eps,
+      standardize = standardize,
+      screen = screen
     )
     
     y_hat_array <- array(
@@ -122,8 +133,9 @@ cv.sglasso <- function(
       dim = c(nrow(Xtest), nlambda_eff, nd_eff)
     )
     
+    result_betas <- coef(result_j, drop = FALSE)
     y_hat_array[] <- apply(
-      result_j$betas,
+      result_betas,
       3,
       function(beta_mat) {
         cbind(1, Xtest) %*% beta_mat

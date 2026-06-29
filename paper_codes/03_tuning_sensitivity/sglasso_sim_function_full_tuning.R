@@ -326,6 +326,98 @@ block_sim_data <- function(n_train = 100,
   )
 }
 
+block_sim_data_exchangeable_fast <- function(n_train = 100,
+                                             n_val = 100,
+                                             n_test = 400,
+                                             pj = 5,
+                                             J = 20,
+                                             strong_J = 4,
+                                             rho_w = 0.9,
+                                             rho_b = 0.5,
+                                             eff_nonzero = 1,
+                                             snr = 1.528,
+                                             nonzero_id = NULL,
+                                             signal_pattern = c("homogeneous",
+                                                                "mixed_signs",
+                                                                "weak_strong_mixed")) {
+  signal_pattern <- match.arg(signal_pattern)
+  
+  if (rho_b < 0 || rho_w < rho_b || rho_w > 1) {
+    stop("Fast exchangeable generator requires 0 <= rho_b <= rho_w <= 1.")
+  }
+  
+  p <- pj * J
+  if (is.null(nonzero_id)) nonzero_id <- sample(J, strong_J)
+  
+  make_X <- function(n) {
+    if (n == 0) return(matrix(numeric(0), nrow = 0, ncol = p))
+    common_factor <- rnorm(n)
+    group_factor <- matrix(rnorm(n * J), nrow = n, ncol = J)
+    noise <- matrix(rnorm(n * p), nrow = n, ncol = p)
+    sqrt(rho_b) * common_factor +
+      sqrt(rho_w - rho_b) * group_factor[, rep(seq_len(J), each = pj), drop = FALSE] +
+      sqrt(1 - rho_w) * noise
+  }
+  
+  X_train <- make_X(n_train)
+  X_val <- make_X(n_val)
+  X_test <- make_X(n_test)
+  
+  group <- rep(seq_len(J), each = pj)
+  
+  beta_values <- make_beta_group_values(
+    strong_J = strong_J,
+    eff_nonzero = eff_nonzero,
+    signal_pattern = signal_pattern
+  )
+  
+  beta <- rep(0, p)
+  for (k in seq_len(strong_J)) {
+    idx <- ((nonzero_id[k] - 1) * pj + 1):(nonzero_id[k] * pj)
+    beta[idx] <- beta_values[k]
+  }
+  
+  group_sum <- as.numeric(rowsum(beta, group, reorder = FALSE))
+  risk_null <- (1 - rho_w) * sum(beta^2) +
+    (rho_w - rho_b) * sum(group_sum^2) +
+    rho_b * sum(beta)^2
+  sigma <- sqrt(risk_null / snr)
+  error_null <- risk_null + sigma^2
+  
+  y_train <- as.numeric(X_train %*% beta + rnorm(n_train) * sigma)
+  y_val <- as.numeric(X_val %*% beta + rnorm(n_val) * sigma)
+  y_test <- as.numeric(X_test %*% beta + rnorm(n_test) * sigma)
+  
+  true_groups <- sort(nonzero_id)
+  
+  list(
+    X_train = X_train,
+    X_val = X_val,
+    X_test = X_test,
+    y_train = y_train,
+    y_val = y_val,
+    y_test = y_test,
+    beta = beta,
+    group = group,
+    true_groups = true_groups,
+    corrmat = NULL,
+    sigma = sigma,
+    risk_null = risk_null,
+    error_null = error_null,
+    n_train = n_train,
+    n_val = n_val,
+    n_test = n_test,
+    p = p,
+    pj = pj,
+    J = J,
+    strong_J = strong_J,
+    rho_w = rho_w,
+    rho_b = rho_b,
+    snr = snr,
+    signal_pattern = signal_pattern
+  )
+}
+
 
 ############################################################
 # 4. Train-only standardization
@@ -345,7 +437,8 @@ standardize_by_train <- function(X_train, X_val, X_test, y_train,
       y_train = y_train,
       x_center = rep(0, ncol(X_train)),
       x_scale = rep(1, ncol(X_train)),
-      y_center = 0
+      y_center = 0,
+      standardized = FALSE
     ))
   }
 
@@ -361,7 +454,8 @@ standardize_by_train <- function(X_train, X_val, X_test, y_train,
     y_train = y_train - y_center,
     x_center = x_center,
     x_scale = x_scale,
-    y_center = y_center
+    y_center = y_center,
+    standardized = TRUE
   )
 }
 
@@ -383,6 +477,31 @@ true_coef_to_standardized <- function(beta_true, x_center, x_scale, y_center) {
   beta_std <- beta_true * x_scale
   intercept_std <- sum(x_center * beta_true) - y_center
   c(intercept_std, beta_std)
+}
+
+exchangeable_block_quadratic <- function(delta, group, rho_w, rho_b) {
+  group_sum <- as.numeric(rowsum(delta, group, reorder = FALSE))
+  (1 - rho_w) * sum(delta^2) +
+    (rho_w - rho_b) * sum(group_sum^2) +
+    rho_b * sum(delta)^2
+}
+
+call_sglasso <- function(...,
+                         standardize = TRUE,
+                         screen = NULL,
+                         transform = NULL) {
+  args <- list(...)
+  sglasso_args <- names(formals(sglasso::sglasso))
+  if ("standardize" %in% sglasso_args) {
+    args$standardize <- standardize
+  }
+  if (!is.null(screen) && "screen" %in% sglasso_args) {
+    args$screen <- screen
+  }
+  if (!is.null(transform) && "transform" %in% sglasso_args) {
+    args$transform <- transform
+  }
+  do.call(sglasso::sglasso, args)
 }
 
 parallel_lapply <- function(X, FUN, cores = 1, ...) {
@@ -503,17 +622,21 @@ compute_tuning_score <- function(
     return(val_risk)
   }
   
-  B_orig <- standardized_coef_to_original(
-    B,
-    std_dat$x_center,
-    std_dat$x_scale,
-    std_dat$y_center
-  )
-  beta_path_orig <- B_orig[-1, , drop = FALSE]
-  delta <- sweep(beta_path_orig, 1, dat$beta, "-")
-  risk <- diag(t(delta) %*% dat$corrmat %*% delta)
-  
   if (criterion == "Risk") {
+    B_orig <- standardized_coef_to_original(
+      B,
+      std_dat$x_center,
+      std_dat$x_scale,
+      std_dat$y_center
+    )
+    beta_path_orig <- B_orig[-1, , drop = FALSE]
+    delta <- sweep(beta_path_orig, 1, dat$beta, "-")
+    risk <- if (!is.null(dat$corrmat)) {
+      diag(t(delta) %*% dat$corrmat %*% delta)
+    } else {
+      apply(delta, 2, exchangeable_block_quadratic,
+            group = dat$group, rho_w = dat$rho_w, rho_b = dat$rho_b)
+    }
     return(risk)
   }
   
@@ -538,7 +661,7 @@ compute_tuning_score <- function(
   }
   
   if (criterion == "EBIC") {
-    ebic_penalty <- 2 * ebic_gamma * log(choose(J, pmin(df_groups, J)))
+    ebic_penalty <- 2 * ebic_gamma * lchoose(J, pmin(df_groups, J))
     
     return(
       n * log(pmax(rss / n, .Machine$double.eps)) +
@@ -633,7 +756,16 @@ evaluate_beta <- function(method,
   beta_no_int <- beta_orig[-1]
   delta <- beta_no_int - beta_true
 
-  risk <- as.numeric(t(delta) %*% corrmat %*% delta)
+  risk <- if (!is.null(corrmat)) {
+    as.numeric(t(delta) %*% corrmat %*% delta)
+  } else {
+    exchangeable_block_quadratic(
+      delta = delta,
+      group = group,
+      rho_w = attr(beta_true, "rho_w"),
+      rho_b = attr(beta_true, "rho_b")
+    )
+  }
   error_test <- risk + sigma2
   pve <- 1 - error_test / error_null
   rte_bayes <- error_test / sigma2
@@ -647,7 +779,11 @@ evaluate_beta <- function(method,
   true_mean_test <- as.numeric(X_test_orig %*% beta_true)
   MSE_y <- mean((true_mean_test - pred_test)^2)
   MSE_beta <- sum(delta^2)
-  MSE_beta_cov <- as.numeric(t(delta) %*% COV_X_test %*% delta)
+  MSE_beta_cov <- if (!is.null(COV_X_test)) {
+    as.numeric(t(delta) %*% COV_X_test %*% delta)
+  } else {
+    risk
+  }
 
   sel_groups <- selected_groups_from_beta(beta_no_int, group)
   sel_metrics <- selection_metrics(sel_groups, true_groups, length(unique(group)))
@@ -735,7 +871,8 @@ fit_grpreg_method <- function(method_name,
                               eps,
                               maxit,
                               tuning_criterion = "Min_val",
-                              ebic_gamma = 0.5) {
+                              ebic_gamma = 0.5,
+                              lambda_min_ratio = 0.01) {
   out <- tryCatch({
 
     t0 <- proc.time()
@@ -747,7 +884,7 @@ fit_grpreg_method <- function(method_name,
       penalty = penalty,
       max.iter = maxit,
       eps = eps,
-      lambda.min = 0.05,
+      lambda.min = lambda_min_ratio,
       nlambda = nlambda
     )
 
@@ -782,6 +919,7 @@ fit_grpreg_method <- function(method_name,
       sigma2 = dat$sigma^2,
       error_null = dat$error_null,
       risk_null = dat$risk_null,
+      alpha = 1,
       lambda = safe_lambda(fit$lambda, id),
       tuning_criterion = tuning_criterion,
       time = elapsed,
@@ -804,7 +942,8 @@ fit_adelie <- function(dat,
                        n_threads = 1,
                        alpha_cores = 1,
                        tuning_criterion = "Min_val",
-                       ebic_gamma = 0.5) {
+                       ebic_gamma = 0.5,
+                       lambda_min_ratio = 0.01) {
   out <- tryCatch({
 
     group_starts <- make_adelie_group_starts(dat$group)
@@ -820,7 +959,7 @@ fit_adelie <- function(dat,
         standardize = FALSE,
         intercept = TRUE,
         lmda_path_size = nlambda,
-        min_ratio = 0.05,
+        min_ratio = lambda_min_ratio,
         tol = eps,
         max_iters = as.integer(maxit),
         screen_rule = "strong",
@@ -904,7 +1043,8 @@ fit_genet <- function(dat,
                       maxit,
                       alpha_cores = 1,
                       tuning_criterion = "Min_val",
-                      ebic_gamma = 0.5) {
+                      ebic_gamma = 0.5,
+                      lambda_min_ratio = 0.01) {
   out <- tryCatch({
     
     t0 <- proc.time()
@@ -918,7 +1058,7 @@ fit_genet <- function(dat,
         alpha = a,
         thresh = eps,
         maxit = maxit,
-        lambda.min.ratio = 0.05
+        lambda.min.ratio = lambda_min_ratio
       )
     }, cores = alpha_cores)
     
@@ -1019,13 +1159,14 @@ fit_sglasso <- function(dat,
                         maxit,
                         alpha_cores = 1,
                         tuning_criterion = "Min_val",
-                        ebic_gamma = 0.5) {
+                        ebic_gamma = 0.5,
+                        lambda_min_ratio = 0.01) {
   out <- tryCatch({
 
     t0 <- proc.time()
 
     fits <- parallel_lapply(alpha_seq, function(a) {
-      sglasso::sglasso(
+      call_sglasso(
         X = std_dat$X_train,
         Y = std_dat$y_train,
         group = dat$group,
@@ -1034,7 +1175,8 @@ fit_sglasso <- function(dat,
         d = d_seq,
         eps = eps,
         max_iter = maxit,
-        lambda.min.ratio = 0.05
+        standardize = !isTRUE(std_dat$standardized),
+        lambda.min.ratio = lambda_min_ratio
       )
     }, cores = alpha_cores)
 
@@ -1139,30 +1281,52 @@ fit_one_sim_replicate <- function(rep_id = 1,
                                   standardize = TRUE,
                                   tuning_criterion = "Min_val",
                                   ebic_gamma = 0.5,
+                                  lambda_min_ratio = 0.01,
                                   alpha_cores = 1,
-                                  eps = 1e-5,
+                                  eps = 1e-4,
                                   maxit = 1e5,
+                                  fast_exchangeable_data = TRUE,
                                   seed = NULL) {
 
   if (!is.null(seed)) set.seed(seed + rep_id)
 
   nonzero_id <- sample(J, strong_J)
 
-  dat <- block_sim_data(
-    n_train = n_train,
-    n_val = n_val,
-    n_test = n_test,
-    pj = pj,
-    J = J,
-    strong_J = strong_J,
-    rho_w = rho_w,
-    rho_b = rho_b,
-    eff_nonzero = eff_nonzero,
-    corrmat_type = corrmat_type,
-    snr = snr,
-    nonzero_id = nonzero_id,
-    signal_pattern = signal_pattern
-  )
+  dat <- if (isTRUE(fast_exchangeable_data) &&
+             identical(corrmat_type, "Exchangeable")) {
+    block_sim_data_exchangeable_fast(
+      n_train = n_train,
+      n_val = n_val,
+      n_test = n_test,
+      pj = pj,
+      J = J,
+      strong_J = strong_J,
+      rho_w = rho_w,
+      rho_b = rho_b,
+      eff_nonzero = eff_nonzero,
+      snr = snr,
+      nonzero_id = nonzero_id,
+      signal_pattern = signal_pattern
+    )
+  } else {
+    block_sim_data(
+      n_train = n_train,
+      n_val = n_val,
+      n_test = n_test,
+      pj = pj,
+      J = J,
+      strong_J = strong_J,
+      rho_w = rho_w,
+      rho_b = rho_b,
+      eff_nonzero = eff_nonzero,
+      corrmat_type = corrmat_type,
+      snr = snr,
+      nonzero_id = nonzero_id,
+      signal_pattern = signal_pattern
+    )
+  }
+  attr(dat$beta, "rho_w") <- dat$rho_w
+  attr(dat$beta, "rho_b") <- dat$rho_b
 
   std_dat <- standardize_by_train(
     dat$X_train,
@@ -1172,7 +1336,12 @@ fit_one_sim_replicate <- function(rep_id = 1,
     standardize
   )
 
-  COV_X_test <- cov(dat$X_test)
+  COV_X_test <- if (isTRUE(fast_exchangeable_data) &&
+                    identical(corrmat_type, "Exchangeable")) {
+    NULL
+  } else {
+    cov(dat$X_test)
+  }
 
   res <- dplyr::bind_rows(
     fit_oracle(dat, std_dat, COV_X_test,
@@ -1181,35 +1350,38 @@ fit_one_sim_replicate <- function(rep_id = 1,
     fit_grpreg_method("GLASSO", "grLasso",
                       dat, std_dat, COV_X_test,
                       nlambda, eps, maxit,
-                      tuning_criterion, ebic_gamma),
+                      tuning_criterion, ebic_gamma, lambda_min_ratio),
 
     fit_adelie(dat, std_dat, COV_X_test,
                alpha_seq, nlambda, eps, maxit,
                alpha_cores = alpha_cores,
                tuning_criterion = tuning_criterion,
-               ebic_gamma = ebic_gamma),
+               ebic_gamma = ebic_gamma,
+               lambda_min_ratio = lambda_min_ratio),
 
     fit_genet(dat, std_dat, COV_X_test,
               alpha_seq, nlambda, eps, maxit,
               alpha_cores = alpha_cores,
               tuning_criterion = tuning_criterion,
-              ebic_gamma = ebic_gamma),
+              ebic_gamma = ebic_gamma,
+              lambda_min_ratio = lambda_min_ratio),
 
     fit_sglasso(dat, std_dat, COV_X_test,
                 alpha_seq, d_seq, nlambda, eps, maxit,
                 alpha_cores = alpha_cores,
                 tuning_criterion = tuning_criterion,
-                ebic_gamma = ebic_gamma),
+                ebic_gamma = ebic_gamma,
+                lambda_min_ratio = lambda_min_ratio),
 
     fit_grpreg_method("GSCAD", "grSCAD",
                       dat, std_dat, COV_X_test,
                       nlambda, eps, maxit,
-                      tuning_criterion, ebic_gamma),
+                      tuning_criterion, ebic_gamma, lambda_min_ratio),
 
     fit_grpreg_method("GMCP", "grMCP",
                       dat, std_dat, COV_X_test,
                       nlambda, eps, maxit,
-                      tuning_criterion, ebic_gamma)
+                      tuning_criterion, ebic_gamma, lambda_min_ratio)
   )
 
   res$rep <- rep_id
@@ -1227,6 +1399,7 @@ fit_one_sim_replicate <- function(rep_id = 1,
   res$corrmat_type <- corrmat_type
   res$signal_pattern <- signal_pattern
   res$standardize <- standardize
+  res$fast_exchangeable_data <- isTRUE(fast_exchangeable_data)
 
   res
 }
@@ -1354,19 +1527,20 @@ simulation_sglasso <- function(
 
 get_paper_settings <- function() {
   data.frame(
-    setting = c("LD-4", "LD-8", "LD-16", "HD-20", "HD-40"),
+    setting = c("LD-4", "LD-8", "LD-12", "HD-10", "HD-20", "HD-40"),
     
-    n_train = c(500, 500, 500, 100, 100),
-    n_val   = c(200, 200, 200, 100, 100),
-    n_test  = c(200, 200, 200, 100, 100),
+    n_train = c(500, 500, 500, 100, 100, 100),
+    n_val   = c(200, 200, 200, 100, 100, 100),
+    n_test  = c(200, 200, 200, 100, 100, 100),
     
-    p        = c(100, 100, 100, 1000, 1000),
-    strong_J = c(4, 8, 16, 20, 40),
-    J        = c(20, 20, 20, 200, 200),
-    pj       = c(5, 5, 5, 5, 5),
+    p        = c(100, 100, 100, 1000, 1000, 1000),
+    strong_J = c(4, 8, 12, 10, 20, 40),
+    J        = c(20, 20, 20, 200, 200, 200),
+    pj       = c(5, 5, 5, 5, 5, 5),
     
-    dimensionality = c("LD", "LD", "LD", "HD", "HD"),
-    sparsity_level = c("Sparse", "Moderate", "Dense", "Sparse", "Moderate")
+    dimensionality = c("LD", "LD", "LD", "HD", "HD", "HD"),
+    sparsity_level = c("Sparse", "Moderate", "Dense",
+                       "Sparse", "Moderate", "Dense")
   )
 }
 
@@ -1396,7 +1570,7 @@ run_short_sim_test <- function(tuning_criterion = "Min_val") {
     nlambda = 20,
     standardize = TRUE,
     tuning_criterion = tuning_criterion,
-    eps = 1e-5,
+    eps = 1e-4,
     maxit = 1e5
   )
 }
@@ -1496,34 +1670,102 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
                                        repeatnum = 5,
                                        seed = 2026,
                                        alpha_fixed = 0.5,
+                                       grpreg_alpha_fixed = 1,
                                        d_fixed = 0.5,
                                        nlambda = 50,
                                        standardize = FALSE,
-                                       eps = 1e-5,
+                                       lambda_min_ratio = 0.01,
+                                       eps = 1e-4,
                                        maxit = 1e5,
-                                       signal_pattern = "weak_strong_mixed") {
+                                       signal_pattern = "weak_strong_mixed",
+                                       checkpoint_dir = NULL,
+                                       cores = 1,
+                                       fast_exchangeable_data = TRUE) {
 
   set.seed(seed)
-  out <- list()
-  row_id <- 1
+  cores <- max(1L, as.integer(cores))
+  if (!is.null(checkpoint_dir)) {
+    dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  progress_msg <- function(...) {
+    cat(
+      sprintf("[%s] ", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
+      sprintf(...),
+      "\n",
+      sep = ""
+    )
+    flush.console()
+  }
+  
+  make_task_key <- function(p_value, J_value, rep_id) {
+    paste(p_value, J_value, rep_id, sep = "__")
+  }
+  
+  save_scalability_checkpoint <- function(task_result,
+                                          axis_name,
+                                          p_value,
+                                          J_value,
+                                          rep_id,
+                                          task_id,
+                                          reused_duplicate = FALSE) {
+    if (is.null(checkpoint_dir)) {
+      return(task_result)
+    }
+    
+    task_result$task_id <- task_id
+    task_result$reused_duplicate <- reused_duplicate
+    task_result$checkpoint_time <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+    
+    checkpoint_file <- file.path(
+      checkpoint_dir,
+      sprintf(
+        "task_%03d_axis_%s_p_%d_J_%d_rep_%03d.rds",
+        task_id,
+        axis_name,
+        p_value,
+        J_value,
+        rep_id
+      )
+    )
+    saveRDS(task_result, checkpoint_file)
+    progress_msg("Saved scalability checkpoint: %s", checkpoint_file)
+    invisible(task_result)
+  }
 
   run_one_runtime <- function(axis_name, p_value, J_value, rep_id) {
 
     strong_J <- max(1, round(strong_frac * J_value))
 
-    dat <- block_sim_data(
-      n_train = n_train,
-      n_val = n_val,
-      n_test = n_test,
-      pj = pj,
-      J = J_value,
-      strong_J = strong_J,
-      rho_w = rho_w,
-      rho_b = rho_b,
-      snr = snr,
-      nonzero_id = sample(J_value, strong_J),
-      signal_pattern = signal_pattern
-    )
+    dat <- if (isTRUE(fast_exchangeable_data)) {
+      block_sim_data_exchangeable_fast(
+        n_train = n_train,
+        n_val = n_val,
+        n_test = n_test,
+        pj = pj,
+        J = J_value,
+        strong_J = strong_J,
+        rho_w = rho_w,
+        rho_b = rho_b,
+        snr = snr,
+        nonzero_id = sample(J_value, strong_J),
+        signal_pattern = signal_pattern
+      )
+    } else {
+      block_sim_data(
+        n_train = n_train,
+        n_val = n_val,
+        n_test = n_test,
+        pj = pj,
+        J = J_value,
+        strong_J = strong_J,
+        rho_w = rho_w,
+        rho_b = rho_b,
+        snr = snr,
+        nonzero_id = sample(J_value, strong_J),
+        signal_pattern = signal_pattern
+      )
+    }
 
     std_dat <- standardize_by_train(
       dat$X_train,
@@ -1557,10 +1799,10 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       std_dat$X_train, std_dat$y_train,
       group = dat$group,
       penalty = "grLasso",
-      alpha = alpha_fixed,
+      alpha = grpreg_alpha_fixed,
       max.iter = maxit,
       eps = eps,
-      lambda.min = 0.05,
+      lambda.min = lambda_min_ratio,
       nlambda = nlambda
     ))
 
@@ -1569,10 +1811,10 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       glm = adelie::glm.gaussian(std_dat$y_train),
       groups = make_adelie_group_starts(dat$group),
       alpha = alpha_fixed,
-      standardize = TRUE,
+      standardize = !isTRUE(std_dat$standardized),
       intercept = TRUE,
       lmda_path_size = nlambda,
-      min_ratio = 0.05,
+      min_ratio = lambda_min_ratio,
       tol = eps,
       max_iters = as.integer(maxit),
       screen_rule = "strong",
@@ -1587,10 +1829,10 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       alpha = alpha_fixed,
       thresh = eps,
       maxit = maxit,
-      lambda.min.ratio = 0.05
+      lambda.min.ratio = lambda_min_ratio
     ))
 
-    t_sglasso <- time_method(sglasso::sglasso(
+    t_sglasso <- time_method(call_sglasso(
       X = std_dat$X_train,
       Y = std_dat$y_train,
       group = dat$group,
@@ -1599,17 +1841,20 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       d = d_fixed,
       eps = eps,
       max_iter = maxit,
-      lambda.min.ratio = 0.05
+      standardize = !isTRUE(std_dat$standardized),
+      screen = "SSR_fast",
+      transform = "lazy",
+      lambda.min.ratio = lambda_min_ratio
     ))
 
     t_gscad <- time_method(grpreg::grpreg(
       std_dat$X_train, std_dat$y_train,
       group = dat$group,
       penalty = "grSCAD",
-      alpha = alpha_fixed,
+      alpha = grpreg_alpha_fixed,
       max.iter = maxit,
       eps = eps,
-      lambda.min = 0.05,
+      lambda.min = lambda_min_ratio,
       nlambda = nlambda
     ))
 
@@ -1617,10 +1862,10 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       std_dat$X_train, std_dat$y_train,
       group = dat$group,
       penalty = "grMCP",
-      alpha = alpha_fixed,
+      alpha = grpreg_alpha_fixed,
       max.iter = maxit,
       eps = eps,
-      lambda.min = 0.05,
+      lambda.min = lambda_min_ratio,
       nlambda = nlambda
     ))
 
@@ -1631,7 +1876,8 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       rep_id = rep_id,
       method = c("GLASSO", "ADELIE", "GENET",
                  "SGLASSO", "GSCAD", "GMCP"),
-      alpha = alpha_fixed,
+      alpha = c(grpreg_alpha_fixed, alpha_fixed, alpha_fixed,
+                alpha_fixed, grpreg_alpha_fixed, grpreg_alpha_fixed),
       d = c(NA_real_, NA_real_, NA_real_,
             d_fixed, NA_real_, NA_real_),
       n_paths = 1,
@@ -1644,23 +1890,130 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
     )
   }
 
-  for (p in p_grid) {
-    J <- as.integer(p / pj)
-    for (r in seq_len(repeatnum)) {
-      out[[row_id]] <- run_one_runtime("p", p, J, r)
-      row_id <- row_id + 1
+  p_tasks <- expand.grid(
+    p = p_grid,
+    rep_id = seq_len(repeatnum),
+    KEEP.OUT.ATTRS = FALSE
+  )
+  p_tasks$J <- as.integer(p_tasks$p / pj)
+  p_tasks$axis <- "p"
+  
+  j_tasks <- expand.grid(
+    J = J_grid,
+    rep_id = seq_len(repeatnum),
+    KEEP.OUT.ATTRS = FALSE
+  )
+  j_tasks$p <- as.integer(j_tasks$J * pj)
+  j_tasks$axis <- "J"
+  
+  all_tasks <- rbind(
+    p_tasks[, c("axis", "p", "J", "rep_id")],
+    j_tasks[, c("axis", "p", "J", "rep_id")]
+  )
+  all_tasks$task_id <- seq_len(nrow(all_tasks))
+  all_tasks$key <- mapply(
+    make_task_key,
+    all_tasks$p,
+    all_tasks$J,
+    all_tasks$rep_id,
+    USE.NAMES = FALSE
+  )
+  
+  fit_tasks <- all_tasks[!duplicated(all_tasks$key), c("key", "p", "J", "rep_id", "task_id")]
+  row.names(fit_tasks) <- NULL
+  
+  progress_msg(
+    "Scalability task plan: output_tasks=%d | unique_fit_tasks=%d | cores=%d",
+    nrow(all_tasks),
+    nrow(fit_tasks),
+    cores
+  )
+  
+  run_fit_task <- function(ii) {
+    fit_task <- fit_tasks[ii, , drop = FALSE]
+    task_rows <- all_tasks[all_tasks$key == fit_task$key[[1]], , drop = FALSE]
+    task_start <- proc.time()[3]
+    
+    progress_msg(
+      "[%d/%d] Scalability fit started | p=%d | J=%d | rep=%d",
+      ii,
+      nrow(fit_tasks),
+      fit_task$p[[1]],
+      fit_task$J[[1]],
+      fit_task$rep_id[[1]]
+    )
+    
+    set.seed(seed + fit_task$task_id[[1]])
+    fit_result <- run_one_runtime(
+      axis_name = task_rows$axis[[1]],
+      p_value = fit_task$p[[1]],
+      J_value = fit_task$J[[1]],
+      rep_id = fit_task$rep_id[[1]]
+    )
+    
+    output <- lapply(seq_len(nrow(task_rows)), function(jj) {
+      task_result <- fit_result
+      task_result$axis <- task_rows$axis[[jj]]
+      save_scalability_checkpoint(
+        task_result,
+        axis_name = task_rows$axis[[jj]],
+        p_value = task_rows$p[[jj]],
+        J_value = task_rows$J[[jj]],
+        rep_id = task_rows$rep_id[[jj]],
+        task_id = task_rows$task_id[[jj]],
+        reused_duplicate = jj > 1L
+      )
+    })
+    
+    progress_msg(
+      "[%d/%d] Scalability fit finished | p=%d | J=%d | rep=%d | output_tasks=%d | elapsed=%.2f sec",
+      ii,
+      nrow(fit_tasks),
+      fit_task$p[[1]],
+      fit_task$J[[1]],
+      fit_task$rep_id[[1]],
+      nrow(task_rows),
+      proc.time()[3] - task_start
+    )
+    
+    dplyr::bind_rows(output)
+  }
+  
+  if (cores > 1L && nrow(fit_tasks) > 1L) {
+    worker_count <- min(cores, nrow(fit_tasks))
+    progress_msg("Starting parallel scalability fits with %d workers", worker_count)
+    doParallel::registerDoParallel(cores = worker_count)
+    doRNG::registerDoRNG(seed)
+    
+    out <- foreach::foreach(
+      ii = seq_len(nrow(fit_tasks)),
+      .combine = dplyr::bind_rows,
+      .packages = required_packages,
+      .export = c(
+        "fit_tasks",
+        "all_tasks",
+        "seed",
+        "run_fit_task",
+        "run_one_runtime",
+        "save_scalability_checkpoint",
+        "progress_msg",
+        "block_sim_data",
+        "standardize_by_train",
+        "make_adelie_group_starts"
+      )
+    ) %dopar% {
+      run_fit_task(ii)
     }
+    
+    foreach::registerDoSEQ()
+  } else {
+    progress_msg("Starting serial scalability fits")
+    out <- dplyr::bind_rows(
+      lapply(seq_len(nrow(fit_tasks)), run_fit_task)
+    )
   }
 
-  for (J in J_grid) {
-    p <- J * pj
-    for (r in seq_len(repeatnum)) {
-      out[[row_id]] <- run_one_runtime("J", p, J, r)
-      row_id <- row_id + 1
-    }
-  }
-
-  dplyr::bind_rows(out)
+  out
 }
 
 summarise_scalability <- function(scalability_results) {

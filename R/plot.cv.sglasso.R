@@ -100,7 +100,7 @@ plot.cv.sglasso <- function(x,
   
   if (selected) {
     
-    beta <- x$fit$betas
+    beta <- coef(x$fit, drop = FALSE)
     
     if (length(dim(beta)) == 3) {
       beta <- beta[, , x$min_ind[2]]
