@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=56
 #SBATCH --mem-per-cpu=1000M
-#SBATCH --time=00-03:00:00
+#SBATCH --time=03-00:00:00
 
 #SBATCH --output=logs/real_slasso_%j.out
 #SBATCH --error=logs/real_slasso_%j.err
@@ -67,7 +67,7 @@ else
   log_msg "Environment modules are not available; using current R environment."
 fi
 
-R_LIBRARY_DIR="${R_LIBRARY_DIR:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
+R_LIBRARY_DIR="${R_LIBRARY_DIR:-${HOME}/R/x86_64-pc-linux-gnu-library/4.3}"
 export R_LIBS_USER="${R_LIBRARY_DIR}"
 export R_LIBS="${R_LIBRARY_DIR}"
 
@@ -79,6 +79,16 @@ export VECLIB_MAXIMUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 
 OUTDIR="${OUTDIR:-results/real_data}"
+NREP="${NREP:-100}"
+SEED="${SEED:-2025}"
+NFOLDS="${NFOLDS:-5}"
+NLAMBDA="${NLAMBDA:-20}"
+LAMBDA_MIN_RATIO="${LAMBDA_MIN_RATIO:-0.01}"
+EPS="${EPS:-1e-4}"
+MAXIT="${MAXIT:-1e8}"
+STANDARDIZE="${STANDARDIZE:-TRUE}"
+SGLASSO_SCREEN="${SGLASSO_SCREEN:-SSR_fast}"
+SGLASSO_TRANSFORM="${SGLASSO_TRANSFORM:-lazy}"
 
 if [ -f "${SCRIPT_DIR}/run_real_slasso_all.R" ]; then
   RSCRIPT_FILE="${SCRIPT_DIR}/run_real_slasso_all.R"
@@ -97,6 +107,16 @@ fi
 log_msg "Working directory      : $(pwd)"
 log_msg "R_LIBS_USER            : ${R_LIBS_USER}"
 log_msg "R_LIBS                 : ${R_LIBS}"
+log_msg "NREP                   : ${NREP}"
+log_msg "SEED                   : ${SEED}"
+log_msg "NFOLDS                 : ${NFOLDS}"
+log_msg "NLAMBDA                : ${NLAMBDA}"
+log_msg "LAMBDA_MIN_RATIO       : ${LAMBDA_MIN_RATIO}"
+log_msg "EPS                    : ${EPS}"
+log_msg "MAXIT                  : ${MAXIT}"
+log_msg "STANDARDIZE            : ${STANDARDIZE}"
+log_msg "SGLASSO_SCREEN         : ${SGLASSO_SCREEN}"
+log_msg "SGLASSO_TRANSFORM      : ${SGLASSO_TRANSFORM}"
 log_msg "OUTDIR                 : ${OUTDIR}"
 log_msg "OMP_NUM_THREADS        : ${OMP_NUM_THREADS}"
 log_msg "OPENBLAS_NUM_THREADS   : ${OPENBLAS_NUM_THREADS}"
@@ -113,7 +133,18 @@ test -f "$RFUNCTION_FILE"
 log_msg "Required files found."
 
 log_msg "Starting R script..."
-Rscript --vanilla "$RSCRIPT_FILE" --outdir="${OUTDIR}"
+Rscript --vanilla "$RSCRIPT_FILE" \
+  --nrep="${NREP}" \
+  --seed="${SEED}" \
+  --nfolds="${NFOLDS}" \
+  --nlambda="${NLAMBDA}" \
+  --lambda_min_ratio="${LAMBDA_MIN_RATIO}" \
+  --eps="${EPS}" \
+  --maxit="${MAXIT}" \
+  --standardize="${STANDARDIZE}" \
+  --sglasso_screen="${SGLASSO_SCREEN}" \
+  --sglasso_transform="${SGLASSO_TRANSFORM}" \
+  --outdir="${OUTDIR}"
 log_msg "R script finished."
 
 log_msg "=================================================="

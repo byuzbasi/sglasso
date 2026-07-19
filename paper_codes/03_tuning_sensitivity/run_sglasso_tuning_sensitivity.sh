@@ -68,7 +68,7 @@ else
   log_msg "Environment modules are not available; using current R environment."
 fi
 
-R_LIBRARY_DIR="${R_LIBRARY_DIR:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
+R_LIBRARY_DIR="${R_LIBRARY_DIR:-${HOME}/R/x86_64-pc-linux-gnu-library/4.3}"
 export R_LIBS_USER="${R_LIBRARY_DIR}"
 export R_LIBS="${R_LIBRARY_DIR}"
 
@@ -84,6 +84,13 @@ NREP="${NREP:-5}"
 SEED="${SEED:-2026}"
 CORES="${CORES:-${SLURM_CPUS_PER_TASK:-1}}"
 OUTDIR="${OUTDIR:-results/tuning_sensitivity}"
+FAST_DATA="${FAST_DATA:-TRUE}"
+LAMBDA_MIN_RATIO="${LAMBDA_MIN_RATIO:-0.01}"
+EPS="${EPS:-1e-4}"
+MAXIT="${MAXIT:-1e5}"
+NLAMBDA="${NLAMBDA:-100}"
+SGLASSO_SCREEN="${SGLASSO_SCREEN:-SSR_fast}"
+SGLASSO_TRANSFORM="${SGLASSO_TRANSFORM:-lazy}"
 
 if [ -f "${SCRIPT_DIR}/run_sglasso_tuning_sensitivity.R" ]; then
   RSCRIPT_FILE="${SCRIPT_DIR}/run_sglasso_tuning_sensitivity.R"
@@ -103,6 +110,13 @@ log_msg "NREP                   : ${NREP}"
 log_msg "SEED                   : ${SEED}"
 log_msg "CORES                  : ${CORES}"
 log_msg "OUTDIR                 : ${OUTDIR}"
+log_msg "FAST_DATA              : ${FAST_DATA}"
+log_msg "LAMBDA_MIN_RATIO       : ${LAMBDA_MIN_RATIO}"
+log_msg "EPS                    : ${EPS}"
+log_msg "MAXIT                  : ${MAXIT}"
+log_msg "NLAMBDA                : ${NLAMBDA}"
+log_msg "SGLASSO_SCREEN         : ${SGLASSO_SCREEN}"
+log_msg "SGLASSO_TRANSFORM      : ${SGLASSO_TRANSFORM}"
 log_msg "OMP_NUM_THREADS        : ${OMP_NUM_THREADS}"
 log_msg "OPENBLAS_NUM_THREADS   : ${OPENBLAS_NUM_THREADS}"
 log_msg "MKL_NUM_THREADS        : ${MKL_NUM_THREADS}"
@@ -117,7 +131,14 @@ Rscript --vanilla "$RSCRIPT_FILE" \
   --nrep="${NREP}" \
   --seed="${SEED}" \
   --cores="${CORES}" \
-  --outdir="${OUTDIR}"
+  --outdir="${OUTDIR}" \
+  --fast_data="${FAST_DATA}" \
+  --lambda_min_ratio="${LAMBDA_MIN_RATIO}" \
+  --eps="${EPS}" \
+  --maxit="${MAXIT}" \
+  --nlambda="${NLAMBDA}" \
+  --sglasso_screen="${SGLASSO_SCREEN}" \
+  --sglasso_transform="${SGLASSO_TRANSFORM}"
 log_msg "Tuning sensitivity R script finished."
 
 log_msg "=================================================="

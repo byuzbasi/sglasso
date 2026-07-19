@@ -68,7 +68,7 @@ else
   log_msg "Environment modules are not available; using current R environment."
 fi
 
-R_LIBRARY_DIR="${R_LIBRARY_DIR:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
+R_LIBRARY_DIR="${R_LIBRARY_DIR:-${HOME}/R/x86_64-pc-linux-gnu-library/4.3}"
 export R_LIBS_USER="${R_LIBRARY_DIR}"
 export R_LIBS="${R_LIBRARY_DIR}"
 

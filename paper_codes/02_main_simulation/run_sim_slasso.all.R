@@ -69,8 +69,8 @@ dir.create("logs", recursive = TRUE, showWarnings = FALSE)
 # 3. Simulation design
 ############################################################
 
-# For final server run, increase repeatnum if desired.
-repeatnum <- as.integer(Sys.getenv("REPEATNUM", unset = "100"))
+# Main manuscript run uses 50 replications unless overridden by REPEATNUM.
+repeatnum <- as.integer(Sys.getenv("REPEATNUM", unset = "50"))
 cores <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", unset = "55"))
 cores <- max(1L, cores)
 fast_data <- tolower(Sys.getenv("FAST_DATA", unset = "TRUE")) %in%
@@ -146,12 +146,12 @@ job_id <- 1L
 n_jobs <- nrow(paper_settings) * length(tuning_criterion_grid)
 
 for (i in seq_len(nrow(paper_settings))) {
-  
+
   st <- paper_settings[i, ]
-  
+
   for (criterion in tuning_criterion_grid) {
     scenario_start <- proc.time()[3]
-    
+
     log_msg(
       "[%d/%d] Running %s | criterion=%s | p=%d | J=%d | strong_J=%d",
       job_id,
@@ -162,32 +162,32 @@ for (i in seq_len(nrow(paper_settings))) {
       st$J,
       st$strong_J
     )
-    
+
     res <- simulation_sglasso(
       repeatnum = repeatnum,
       seed = seed,
       cores = cores,
-      
+
       n_train = st$n_train,
       n_val = st$n_val,
       n_test = st$n_test,
       pj = st$pj,
       J = st$J,
       strong_J = st$strong_J,
-      
+
       rho_w = 0.9,
       rho_b_grid = rho_b_grid,
-      
+
       eff_nonzero = 1,
       corrmat_type = "Exchangeable",
-      
+
       snr_grid = snr_grid,
       signal_pattern_grid = signal_pattern_grid,
-      
+
       alpha_seq = alpha_seq,
       d_seq = d_seq,
       nlambda = nlambda,
-      
+
       standardize = TRUE,
       tuning_criterion = criterion,
       eps = eps_value,
@@ -195,31 +195,31 @@ for (i in seq_len(nrow(paper_settings))) {
       lambda_min_ratio = lambda_min_ratio,
       fast_exchangeable_data = fast_data
     )
-    
+
     res$setting <- st$setting
     res$dimensionality <- st$dimensionality
     res$tuning_criterion <- criterion
-    
+
     if ("sparsity_level" %in% names(st)) {
       res$sparsity_level <- st$sparsity_level
     }
-    
+
     fname_base <- sprintf(
       "%s__%s__all_scenarios",
       st$setting,
       criterion
     )
-    
+
     saveRDS(
       res,
       file = file.path(rds_dir, paste0(fname_base, ".rds"))
     )
-    
+
     readr::write_csv(
       res,
       file.path(tables_dir, paste0(fname_base, ".csv"))
     )
-    
+
     res_list[[length(res_list) + 1L]] <- res
     log_msg(
       "[%d/%d] Finished %s | criterion=%s | rows=%d | elapsed=%.2f min",

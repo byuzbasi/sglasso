@@ -76,10 +76,10 @@ CHECKPOINT_DIR <- file.path(OUTDIR, "checkpoints")
 dir.create(CHECKPOINT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 p_grid <- parse_num_grid(
-  get_arg("p_grid", "3000,10000,20000,50000")
+  get_arg("p_grid", "3000,6000,9000,12000,15000,20000,25000,30000,40000,50000")
 )
 J_grid <- parse_num_grid(
-  get_arg("J_grid", "1000,2000,5000,10000")
+  get_arg("J_grid", "1000,1500,2000,3000,4000,5000,7500,10000,12500,15000")
 )
 repeatnum <- as.integer(get_arg("nrep", "5"))
 seed <- as.integer(get_arg("seed", "2026"))
@@ -144,32 +144,32 @@ res_scalability <- run_scalability_experiment(
   p_grid = p_grid,
   J_grid = J_grid,
   pj = pj,
-  
+
   n_train = 100,
   n_val = 0,
   n_test = 0,
-  
+
   strong_frac = strong_frac,
   active_groups = active_groups,
-  
+
   rho_w = 0.9,
   rho_b = 0.5,
   snr = 1.528,
-  
+
   repeatnum = repeatnum,
   seed = seed,
-  
+
   alpha_fixed = alpha_fixed,
   grpreg_alpha_fixed = grpreg_alpha_fixed,
   d_fixed = d_fixed,
-  
+
   nlambda = nlambda,
   standardize = standardize,
   lambda_min_ratio = lambda_min_ratio,
-  
+
   eps = eps,
   maxit = maxit,
-  
+
   signal_pattern = "weak_strong_mixed",
   sglasso_screen = sglasso_screen,
   sglasso_transform = sglasso_transform,

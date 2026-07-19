@@ -14,11 +14,30 @@ README.html
 Real data applications -Truba/logs/
 Real data applications -Truba/real_data_results/
 Real data applications -Truba/adelie_lambda_inf_rep_*.rds
+Real data applications -Truba/
 results/real_data/
 results/main_simulation/
+results/
 results/tuning_sensitivity/
 results/scalability/
 results_scalability/
+American_stat_paper/
+American_stat_paper_supps/
+American_stat_paper_supps.zip
+HSSR-paper-code-master/
+SSR-BEDPP- SGLASSO/
+Simulations/
+adelie-main/
+biglasso-master/
+grpnet-master/
+grpreg-main/
+diagnostics/
+reviewer_reports/
+all_comparison.R
+genet_comparison.R
+tmp/
+Rplots.pdf
+sglasso_backup_*.zip
 Truba All Runs/logs/
 Truba All Runs/results/
 Truba All Runs/tmp/

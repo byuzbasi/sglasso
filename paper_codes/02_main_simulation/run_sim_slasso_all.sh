@@ -69,7 +69,7 @@ else
   log_msg "Environment modules are not available; using current R environment."
 fi
 
-R_LIBRARY_DIR="${R_LIBRARY_DIR:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
+R_LIBRARY_DIR="${R_LIBRARY_DIR:-${HOME}/R/x86_64-pc-linux-gnu-library/4.3}"
 export R_LIBS_USER="${R_LIBRARY_DIR}"
 export R_LIBS="${R_LIBRARY_DIR}"
 
@@ -82,7 +82,7 @@ export BLIS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 
-REPEATNUM="${REPEATNUM:-100}"
+REPEATNUM="${REPEATNUM:-50}"
 
 if [ -f "${SCRIPT_DIR}/run_sim_slasso.all.R" ]; then
   RSCRIPT_FILE="${SCRIPT_DIR}/run_sim_slasso.all.R"
@@ -107,6 +107,9 @@ log_msg "R_LIBS_USER            : ${R_LIBS_USER}"
 log_msg "R_LIBS                 : ${R_LIBS}"
 log_msg "REPEATNUM              : ${REPEATNUM}"
 log_msg "OUTDIR                 : ${OUTDIR}"
+log_msg "FAST_DATA              : ${FAST_DATA:-TRUE}"
+log_msg "LAMBDA_MIN_RATIO       : ${LAMBDA_MIN_RATIO:-0.01}"
+log_msg "EPS                    : ${EPS:-1e-4}"
 log_msg "SLURM_CPUS_PER_TASK    : ${SLURM_CPUS_PER_TASK:-NA}"
 log_msg "OMP_NUM_THREADS        : ${OMP_NUM_THREADS}"
 log_msg "OPENBLAS_NUM_THREADS   : ${OPENBLAS_NUM_THREADS}"
@@ -118,7 +121,12 @@ log_msg "R library paths        : ${R_LIB_PATHS}"
 log_msg "R script               : ${RSCRIPT_FILE}"
 
 log_msg "Starting R simulation script..."
-REPEATNUM="${REPEATNUM}" OUTDIR="${OUTDIR}" Rscript --vanilla "$RSCRIPT_FILE"
+REPEATNUM="${REPEATNUM}" \
+OUTDIR="${OUTDIR}" \
+FAST_DATA="${FAST_DATA:-TRUE}" \
+LAMBDA_MIN_RATIO="${LAMBDA_MIN_RATIO:-0.01}" \
+EPS="${EPS:-1e-4}" \
+Rscript --vanilla "$RSCRIPT_FILE"
 log_msg "R simulation script finished."
 
 log_msg "=================================================="

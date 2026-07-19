@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=sim_slasso
-#SBATCH --account=byuzbasi
+# Set an account if required by your cluster, for example:
+##SBATCH --account=<account_name>
 #SBATCH --partition=debug
 #SBATCH --clusters=arf
 #SBATCH --chdir=..
@@ -11,8 +12,9 @@
 #SBATCH --mem=50G
 #SBATCH --time=00-02:00:00
 
-#SBATCH --mail-user=b.yzb@hotmail.com
-#SBATCH --mail-type=END,FAIL
+# Set email notifications if required, for example:
+##SBATCH --mail-user=<email_address>
+##SBATCH --mail-type=END,FAIL
 
 #SBATCH --output=logs/sim_slasso_%j.out
 #SBATCH --error=logs/sim_slasso_%j.err
@@ -67,7 +69,7 @@ module load apps/R/4.3.0-gcc-11.3.1
 log_msg "Loaded modules:"
 module list 2>&1
 
-R_LIBRARY_DIR="${R_LIBRARY_DIR:-/arf/home/byuzbasi/R/x86_64-pc-linux-gnu-library/4.3}"
+R_LIBRARY_DIR="${R_LIBRARY_DIR:-${HOME}/R/x86_64-pc-linux-gnu-library/4.3}"
 export R_LIBS_USER="${R_LIBRARY_DIR}"
 export R_LIBS="${R_LIBRARY_DIR}"
 

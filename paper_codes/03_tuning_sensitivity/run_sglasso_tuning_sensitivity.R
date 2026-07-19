@@ -71,6 +71,26 @@ eps_value <- as.numeric(get_arg(
   "eps",
   Sys.getenv("EPS", unset = "1e-4")
 ))
+maxit_value <- as.numeric(get_arg(
+  "maxit",
+  Sys.getenv("MAXIT", unset = "1e5")
+))
+nlambda <- as.integer(get_arg(
+  "nlambda",
+  Sys.getenv("NLAMBDA", unset = "100")
+))
+fast_data <- as.logical(tolower(get_arg(
+  "fast_data",
+  Sys.getenv("FAST_DATA", unset = "TRUE")
+)) %in% c("true", "t", "1", "yes", "y"))
+sglasso_screen <- get_arg(
+  "sglasso_screen",
+  Sys.getenv("SGLASSO_SCREEN", unset = "SSR_fast")
+)
+sglasso_transform <- get_arg(
+  "sglasso_transform",
+  Sys.getenv("SGLASSO_TRANSFORM", unset = "lazy")
+)
 OUTDIR <- get_arg("outdir", "results/tuning_sensitivity")
 dir.create(OUTDIR, recursive = TRUE, showWarnings = FALSE)
 CHECKPOINT_DIR <- file.path(OUTDIR, "task_rds")
@@ -111,7 +131,6 @@ tuning_criterion_grid <- c(
 
 alpha_seq <- seq(0.1, 0.9, by = 0.1)
 d_seq <- seq(0, 1, by = 0.1)
-nlambda <- 100
 
 ############################################################
 # Task grid
@@ -129,15 +148,23 @@ task_grid <- expand.grid(
 
 log_msg("Total SGLASSO tuning tasks: %d", nrow(task_grid))
 log_msg(
-  "Settings: nrep=%d, seed=%d, cores=%d, lambda_min_ratio=%.3f, eps=%g",
+  "Settings: nrep=%d, seed=%d, cores=%d, lambda_min_ratio=%.3f, eps=%g, maxit=%g, nlambda=%d",
   repeatnum,
   seed,
   cores,
   lambda_min_ratio,
-  eps_value
+  eps_value,
+  maxit_value,
+  nlambda
 )
 log_msg("Output directory: %s", OUTDIR)
 log_msg("Task checkpoint directory: %s", CHECKPOINT_DIR)
+log_msg(
+  "SGLASSO options: screen=%s; transform=%s; fast_data=%s",
+  sglasso_screen,
+  sglasso_transform,
+  fast_data
+)
 log_msg(
   "Task grid: settings=%s; criteria=%s; rho_b=%s; snr=%s; signals=%s",
   paste(paper_settings$setting, collapse = ","),
@@ -156,21 +183,21 @@ safe_file_part <- function(x) {
 ############################################################
 
 run_one_sglasso_tuning_task <- function(ii) {
-  
+
   ##########################################################
   # Extract one task safely
   ##########################################################
-  
+
   task <- task_grid[ii, , drop = FALSE]
   st <- paper_settings[task$setting_id[[1]], ]
-  
+
   criterion_i <- as.character(task$tuning_criterion[[1]])
   rho_b_i <- as.numeric(task$rho_b[[1]])
   snr_i <- as.numeric(task$snr[[1]])
   signal_i <- as.character(task$signal_pattern[[1]])
   rep_i <- as.integer(task$rep_id[[1]])
   task_start <- proc.time()[3]
-  
+
   log_msg(
     "[%d/%d] Tuning task started | setting=%s | criterion=%s | rho_b=%.3f | snr=%.3f | rep=%d",
     ii,
@@ -181,31 +208,50 @@ run_one_sglasso_tuning_task <- function(ii) {
     snr_i,
     rep_i
   )
-  
+
   set.seed(seed + ii)
-  
+
   ##########################################################
   # Generate data
   ##########################################################
-  
+
   nonzero_id <- sample(st$J, st$strong_J)
-  
-  dat <- block_sim_data(
-    n_train = st$n_train,
-    n_val = st$n_val,
-    n_test = st$n_test,
-    pj = st$pj,
-    J = st$J,
-    strong_J = st$strong_J,
-    rho_w = 0.9,
-    rho_b = rho_b_i,
-    eff_nonzero = 1,
-    corrmat_type = "Exchangeable",
-    snr = snr_i,
-    nonzero_id = nonzero_id,
-    signal_pattern = signal_i
-  )
-  
+
+  dat <- if (isTRUE(fast_data)) {
+    block_sim_data_exchangeable_fast(
+      n_train = st$n_train,
+      n_val = st$n_val,
+      n_test = st$n_test,
+      pj = st$pj,
+      J = st$J,
+      strong_J = st$strong_J,
+      rho_w = 0.9,
+      rho_b = rho_b_i,
+      eff_nonzero = 1,
+      snr = snr_i,
+      nonzero_id = nonzero_id,
+      signal_pattern = signal_i
+    )
+  } else {
+    block_sim_data(
+      n_train = st$n_train,
+      n_val = st$n_val,
+      n_test = st$n_test,
+      pj = st$pj,
+      J = st$J,
+      strong_J = st$strong_J,
+      rho_w = 0.9,
+      rho_b = rho_b_i,
+      eff_nonzero = 1,
+      corrmat_type = "Exchangeable",
+      snr = snr_i,
+      nonzero_id = nonzero_id,
+      signal_pattern = signal_i
+    )
+  }
+  attr(dat$beta, "rho_w") <- dat$rho_w
+  attr(dat$beta, "rho_b") <- dat$rho_b
+
   std_dat <- standardize_by_train(
     dat$X_train,
     dat$X_val,
@@ -213,14 +259,14 @@ run_one_sglasso_tuning_task <- function(ii) {
     dat$y_train,
     standardize = TRUE
   )
-  
+
   COV_X_test <- cov(std_dat$X_test)
-  
+
   ##########################################################
   # Fit SGLASSO for each alpha separately
   # sglasso() expects a single alpha value, not alpha_seq.
   ##########################################################
-  
+
   fits <- lapply(alpha_seq, function(a) {
     call_sglasso(
       X = std_dat$X_train,
@@ -230,19 +276,21 @@ run_one_sglasso_tuning_task <- function(ii) {
       alpha = a,
       d = d_seq,
       eps = eps_value,
-      max_iter = 1e5,
+      max_iter = maxit_value,
       standardize = !isTRUE(std_dat$standardized),
+      screen = sglasso_screen,
+      transform = sglasso_transform,
       lambda.min.ratio = lambda_min_ratio
     )
   })
-  
+
   ##########################################################
   # Case 1: Min_val
   # Select by validation MSE using compute_tuning_score()
   ##########################################################
-  
+
   if (identical(criterion_i, "Min_val")) {
-    
+
     best <- list(
       score = Inf,
       alpha_id = NA_integer_,
@@ -251,27 +299,27 @@ run_one_sglasso_tuning_task <- function(ii) {
       beta = NULL,
       fit = NULL
     )
-    
+
     for (ai in seq_along(fits)) {
       for (di in seq_along(d_seq)) {
-        
-        B <- fits[[ai]]$betas[, , di, drop = FALSE][, , 1]
-        
+
+        B <- coef(fits[[ai]], d = d_seq[di], drop = FALSE)[, , 1]
+
         score <- compute_tuning_score(
           B = B,
           dat = dat,
           std_dat = std_dat,
           criterion = "Min_val"
         )
-        
+
         score[!is.finite(score)] <- Inf
-        
+
         if (all(is.infinite(score))) {
           next
         }
-        
+
         li <- which.min(score)
-        
+
         if (score[li] < best$score) {
           best <- list(
             score = score[li],
@@ -284,24 +332,27 @@ run_one_sglasso_tuning_task <- function(ii) {
         }
       }
     }
-    
+
     if (is.null(best$beta)) {
-      
+
       res <- empty_method_result(
         method = "SGLASSO",
         message = "Min_val failed: all tuning scores are non-finite.",
         tuning_criterion = criterion_i
       )
-      
+
     } else {
-      
+
       res <- evaluate_beta(
         method = "SGLASSO",
         beta_hat = best$beta,
         beta_true = dat$beta,
+        X_test_orig = dat$X_test,
         X_test_std = std_dat$X_test,
         y_test = dat$y_test,
         y_center = std_dat$y_center,
+        x_center = std_dat$x_center,
+        x_scale = std_dat$x_scale,
         group = dat$group,
         true_groups = dat$true_groups,
         corrmat = dat$corrmat,
@@ -317,14 +368,14 @@ run_one_sglasso_tuning_task <- function(ii) {
         iter = NA_real_
       )
     }
-    
+
     ##########################################################
     # Case 2: AIC/BIC/EBIC/GCV
     # Select by package-level sglasso::select()
     ##########################################################
-    
+
   } else {
-    
+
     best <- list(
       score = Inf,
       alpha_id = NA_integer_,
@@ -332,9 +383,9 @@ run_one_sglasso_tuning_task <- function(ii) {
       lambda = NA_real_,
       d = NA_real_
     )
-    
+
     for (ai in seq_along(fits)) {
-      
+
       sel <- tryCatch(
         {
           sglasso::select(
@@ -346,13 +397,13 @@ run_one_sglasso_tuning_task <- function(ii) {
         },
         error = function(e) e
       )
-      
+
       if (inherits(sel, "error")) {
         next
       }
-      
+
       ic_min <- min(sel$IC, na.rm = TRUE)
-      
+
       if (is.finite(ic_min) && ic_min < best$score) {
         best <- list(
           score = ic_min,
@@ -363,24 +414,27 @@ run_one_sglasso_tuning_task <- function(ii) {
         )
       }
     }
-    
+
     if (is.null(best$beta)) {
-      
+
       res <- empty_method_result(
         method = "SGLASSO",
         message = paste0(criterion_i, " failed for all alpha values."),
         tuning_criterion = criterion_i
       )
-      
+
     } else {
-      
+
       res <- evaluate_beta(
         method = "SGLASSO",
         beta_hat = best$beta,
         beta_true = dat$beta,
+        X_test_orig = dat$X_test,
         X_test_std = std_dat$X_test,
         y_test = dat$y_test,
         y_center = std_dat$y_center,
+        x_center = std_dat$x_center,
+        x_scale = std_dat$x_scale,
         group = dat$group,
         true_groups = dat$true_groups,
         corrmat = dat$corrmat,
@@ -397,16 +451,16 @@ run_one_sglasso_tuning_task <- function(ii) {
       )
     }
   }
-  
+
   ##########################################################
   # Attach scenario information
   ##########################################################
-  
+
   res$rep <- rep_i
   res$setting <- st$setting
   res$dimensionality <- st$dimensionality
   res$sparsity_level <- st$sparsity_level
-  
+
   res$n_train <- st$n_train
   res$n_val <- st$n_val
   res$n_test <- st$n_test
@@ -414,15 +468,19 @@ run_one_sglasso_tuning_task <- function(ii) {
   res$pj <- st$pj
   res$J <- st$J
   res$strong_J <- st$strong_J
-  
+
   res$rho_w <- 0.9
   res$rho_b <- rho_b_i
   res$snr <- snr_i
   res$signal_pattern <- signal_i
   res$corrmat_type <- "Exchangeable"
   res$standardize <- TRUE
+  res$fast_exchangeable_data <- isTRUE(fast_data)
+  res$sglasso_screen <- sglasso_screen
+  res$sglasso_transform <- sglasso_transform
+  res$lambda_min_ratio <- lambda_min_ratio
   res$task_id <- ii
-  
+
   checkpoint_file <- file.path(
     CHECKPOINT_DIR,
     sprintf(
@@ -436,7 +494,7 @@ run_one_sglasso_tuning_task <- function(ii) {
     )
   )
   saveRDS(res, checkpoint_file)
-  
+
   log_msg(
     "[%d/%d] Tuning task finished | setting=%s | criterion=%s | rows=%d | elapsed=%.2f sec | checkpoint=%s",
     ii,
@@ -447,7 +505,7 @@ run_one_sglasso_tuning_task <- function(ii) {
     proc.time()[3] - task_start,
     checkpoint_file
   )
-  
+
   res
 }
 
@@ -458,11 +516,11 @@ run_one_sglasso_tuning_task <- function(ii) {
 tuning_start <- proc.time()[3]
 
 if (cores > 1) {
-  
+
   log_msg("Starting parallel tuning tasks with %d workers", cores)
   doParallel::registerDoParallel(cores = cores)
   doRNG::registerDoRNG(seed)
-  
+
   all_tune <- foreach::foreach(
     ii = seq_len(nrow(task_grid)),
     .combine = dplyr::bind_rows,
@@ -474,6 +532,10 @@ if (cores > 1) {
       "alpha_seq",
       "d_seq",
       "nlambda",
+      "maxit_value",
+      "fast_data",
+      "sglasso_screen",
+      "sglasso_transform",
       "CHECKPOINT_DIR",
       "log_msg",
       "safe_file_part",
@@ -482,11 +544,11 @@ if (cores > 1) {
   ) %dopar% {
     run_one_sglasso_tuning_task(ii)
   }
-  
+
   foreach::registerDoSEQ()
-  
+
 } else {
-  
+
   log_msg("Starting serial tuning tasks")
   all_tune <- dplyr::bind_rows(
     lapply(seq_len(nrow(task_grid)), run_one_sglasso_tuning_task)
@@ -626,7 +688,7 @@ saveRDS(
 ############################################################
 
 if (requireNamespace("kableExtra", quietly = TRUE)) {
-  
+
   tab_tuning <- summary_tune_setting %>%
     dplyr::select(
       setting,
@@ -642,7 +704,7 @@ if (requireNamespace("kableExtra", quietly = TRUE)) {
       setting,
       tuning_criterion
     )
-  
+
   latex_table <- kableExtra::kbl(
     tab_tuning,
     format = "latex",
@@ -658,7 +720,7 @@ if (requireNamespace("kableExtra", quietly = TRUE)) {
         "scale_down"
       )
     )
-  
+
   cat(
     latex_table,
     file = file.path(OUTDIR, "sglasso_tuning_table.tex")
@@ -729,7 +791,7 @@ readr::write_csv(
 )
 
 if (requireNamespace("kableExtra", quietly = TRUE)) {
-  
+
   latex_tab <- kableExtra::kbl(
     tab_reviewer,
     format = "latex",
@@ -755,9 +817,9 @@ if (requireNamespace("kableExtra", quietly = TRUE)) {
     kableExtra::kable_styling(
       latex_options = c("hold_position", "scale_down")
     )
-  
+
   cat(latex_tab)
-  
+
   cat(
     latex_tab,
     file = file.path(OUTDIR, "summary_tune_scenario_table.tex")

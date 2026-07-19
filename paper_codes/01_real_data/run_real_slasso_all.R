@@ -40,21 +40,47 @@ get_arg <- function(name, default) {
   sub(paste0("^--", name, "="), "", hit[1])
 }
 
-NREP <- as.integer(get_arg("nrep", "100"))
-SEED <- as.integer(get_arg("seed", "2025"))
-OUTDIR <- get_arg("outdir", "results/real_data")
+get_arg_env <- function(name, env_name, default) {
+  value <- get_arg(name, NA_character_)
+  if (!is.na(value)) return(value)
+  Sys.getenv(env_name, unset = default)
+}
+
+NREP <- as.integer(get_arg_env("nrep", "NREP", "100"))
+SEED <- as.integer(get_arg_env("seed", "SEED", "2025"))
+OUTDIR <- get_arg_env("outdir", "OUTDIR", "results/real_data")
+LAMBDA_MIN_RATIO <- as.numeric(get_arg_env("lambda_min_ratio", "LAMBDA_MIN_RATIO", "0.01"))
+EPS <- as.numeric(get_arg_env("eps", "EPS", "1e-4"))
+MAXIT <- as.numeric(get_arg_env("maxit", "MAXIT", "1e8"))
+NLAMBDA <- as.integer(get_arg_env("nlambda", "NLAMBDA", "20"))
+NFOLDS <- as.integer(get_arg_env("nfolds", "NFOLDS", "5"))
+SGLASSO_SCREEN <- get_arg_env("sglasso_screen", "SGLASSO_SCREEN", "SSR_fast")
+SGLASSO_TRANSFORM <- get_arg_env("sglasso_transform", "SGLASSO_TRANSFORM", "lazy")
+STANDARDIZE <- as.logical(get_arg_env("standardize", "STANDARDIZE", "TRUE"))
 
 slurm_cpus <- Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA)
 if (!is.na(slurm_cpus) && nzchar(slurm_cpus)) {
   NCORES <- max(1L, as.integer(slurm_cpus) - 1L)
 } else {
-  NCORES <- max(1L, parallel::detectCores() - 1L)
+  detected_cores <- suppressWarnings(parallel::detectCores())
+  if (is.na(detected_cores) || detected_cores < 1L) {
+    detected_cores <- 1L
+  }
+  NCORES <- max(1L, detected_cores - 1L)
 }
 
 dir.create(OUTDIR, showWarnings = FALSE, recursive = TRUE)
 
 log_msg("Real-data grouped penalized regression benchmark started")
 log_msg("nrep=%d; seed=%d; ncores=%d; outdir=%s", NREP, SEED, NCORES, OUTDIR)
+log_msg(
+  "nfolds=%d; nlambda=%d; lambda_min_ratio=%.3f; eps=%g; maxit=%g",
+  NFOLDS, NLAMBDA, LAMBDA_MIN_RATIO, EPS, MAXIT
+)
+log_msg(
+  "standardize=%s; sglasso_screen=%s; sglasso_transform=%s",
+  STANDARDIZE, SGLASSO_SCREEN, SGLASSO_TRANSFORM
+)
 
 # -----------------------------
 # 1. Source benchmark function
@@ -180,7 +206,15 @@ save_one_dataset <- function(dataset_name, X, y, group, nrep = NREP, seed = SEED
         n = nrow(X),
         nrep = nrep,
         ncores = NCORES,
-        seed = seed
+        seed = seed,
+        nfolds = NFOLDS,
+        maxit = MAXIT,
+        eps = EPS,
+        lambda_min_ratio = LAMBDA_MIN_RATIO,
+        nlambda = NLAMBDA,
+        standardize = STANDARDIZE,
+        sglasso_screen = SGLASSO_SCREEN,
+        sglasso_transform = SGLASSO_TRANSFORM
       )
     },
     error = function(e) {

@@ -86,27 +86,27 @@ safe_sum <- function(x) {
 # Count selected groups/features from fitted coefficient vector.
 # Intercept, if present, is removed automatically when coef length is p + 1.
 extract_beta <- function(fit, p, lambda = NULL, coef_fun = stats::coef) {
-  
+
   # Direct extraction for grpnet package objects
   if (!is.null(fit$beta)) {
     b <- fit$beta
     b <- as.vector(b)
-    
+
     if (length(b) >= p) {
       return(tail(as.numeric(b), p))
     }
   }
-  
+
   # Direct extraction for sglasso package objects
   if (!is.null(fit$betas)) {
     b <- fit$betas
     b <- as.vector(b)
-    
+
     if (length(b) >= p) {
       return(tail(as.numeric(b), p))
     }
   }
-  
+
   # General fallback
   b <- tryCatch({
     if (!is.null(lambda)) {
@@ -115,11 +115,11 @@ extract_beta <- function(fit, p, lambda = NULL, coef_fun = stats::coef) {
       coef_fun(fit)
     }
   }, error = function(e) NULL)
-  
+
   if (is.null(b)) {
     return(rep(NA_real_, p))
   }
-  
+
   if (is.list(b)) {
     if (!is.null(b$beta)) {
       b <- b$beta
@@ -129,26 +129,26 @@ extract_beta <- function(fit, p, lambda = NULL, coef_fun = stats::coef) {
       b <- unlist(b, recursive = TRUE, use.names = FALSE)
     }
   }
-  
+
   if (inherits(b, "dgCMatrix") || inherits(b, "matrix")) {
     b <- as.vector(b)
   }
-  
+
   b <- suppressWarnings(as.numeric(b))
   b <- b[is.finite(b)]
-  
+
   if (length(b) == p + 1) {
     b <- b[-1]
   }
-  
+
   if (length(b) > p) {
     b <- tail(b, p)
   }
-  
+
   if (length(b) < p) {
     return(rep(NA_real_, p))
   }
-  
+
   b
 }
 selection_summary <- function(beta, group, tol = 1e-6) {
@@ -183,43 +183,50 @@ real_slasso <- function(
     nrep = 100,
     ncores = {
       cpus <- suppressWarnings(as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", unset = "1")))
-      if (is.na(cpus) || cpus < 1L) 1L else cpus
+      detected_cores <- suppressWarnings(parallel::detectCores())
+      if (is.na(detected_cores) || detected_cores < 1L) {
+        detected_cores <- 1L
+      }
+      if (is.na(cpus) || cpus < 1L) max(1L, detected_cores - 1L) else cpus
     },
     seed = 2025,
     train_ratio = 0.70,
     nfolds = 5,
     maxit = 1e8,
-    eps = 1e-5,
-    lambda_min_ratio = 0.05,
+    eps = 1e-4,
+    lambda_min_ratio = 0.01,
     nlambda = 20,
     alpha_seq = seq(0.1, 0.9, length.out = 5),
-    nd = 11
+    nd = 11,
+    standardize = TRUE,
+    sglasso_screen = "SSR_fast",
+    sglasso_transform = "lazy"
 ) {
-  
+
   X <- as.matrix(X)
   y <- as.numeric(y)
   group_membership <- as.numeric(group)
-  
+
   make_adelie_group_starts <- function(group) {
     as.integer(tapply(seq_along(group), group, min))
   }
-  
+
   adelie_groups <- make_adelie_group_starts(group_membership)
-  
+
   if (nrow(X) != length(y)) {
     stop("nrow(X) must be equal to length(y).")
   }
-  
+
   if (ncol(X) != length(group_membership)) {
     stop("ncol(X) must be equal to length(group).")
   }
-  
+
   if (n != nrow(X)) {
     stop("n must be equal to nrow(X).")
   }
-  
+
   ntrain <- round(n * train_ratio)
-  
+
   methods <- c(
     "GLASSO",
     "ADELIE",
@@ -228,58 +235,70 @@ real_slasso <- function(
     "GSCAD",
     "GMCP"
   )
-  
+
   nmethods <- length(methods)
-  
-  cl <- parallel::makeCluster(ncores)
-  
-  user_lib <- Sys.getenv("R_LIBS_USER")
-  parallel::clusterExport(cl, "user_lib", envir = environment())
-  
-  parallel::clusterEvalQ(cl, {
-    if (nzchar(user_lib)) {
-      .libPaths(c(user_lib, .libPaths()))
-    }
-    
-    library(grpreg)
-    library(grpnet)
-    library(adelie)
-    library(sglasso)
-    library(foreach)
-    library(doParallel)
-    library(doRNG)
-    library(tibble)
-    
-    NULL
-  })
-  
-  doParallel::registerDoParallel(cl)
+
+  if (ncores > 1L) {
+    cl <- parallel::makeCluster(ncores)
+
+    user_lib <- Sys.getenv("R_LIBS_USER")
+    parallel::clusterExport(cl, "user_lib", envir = environment())
+
+    parallel::clusterEvalQ(cl, {
+      if (nzchar(user_lib)) {
+        .libPaths(c(user_lib, .libPaths()))
+      }
+
+      library(grpreg)
+      library(grpnet)
+      library(adelie)
+      library(sglasso)
+      library(foreach)
+      library(doParallel)
+      library(doRNG)
+      library(tibble)
+
+      NULL
+    })
+
+    doParallel::registerDoParallel(cl)
+
+    on.exit({
+      parallel::stopCluster(cl)
+      foreach::registerDoSEQ()
+      cat("Parallel cluster stopped.\n")
+    }, add = TRUE)
+  } else {
+    foreach::registerDoSEQ()
+  }
+
   doRNG::registerDoRNG(seed)
-  
+
   cat("\nParallel setup\n")
   cat("Requested cores   :", ncores, "\n")
-  cat("Available cores   :", parallel::detectCores(), "\n")
+  detected_cores <- suppressWarnings(parallel::detectCores())
+  if (is.na(detected_cores) || detected_cores < 1L) {
+    detected_cores <- NA_integer_
+  }
+  cat("Available cores   :", detected_cores, "\n")
   cat("Registered workers:", foreach::getDoParWorkers(), "\n\n")
-  
-  on.exit({
-    parallel::stopCluster(cl)
-    foreach::registerDoSEQ()
-    cat("Parallel cluster stopped.\n")
-  }, add = TRUE)
-  
+
   results_from_foreach <- foreach(
     i = seq_len(nrep),
     .combine = rbind,
     .packages = c(
       "grpreg",
+      "grpnet",
+      "adelie",
       "sglasso",
       "foreach",
       "doParallel",
-      "doRNG"
+      "doRNG",
+      "tibble"
     ),
     .export = c("safe_sum", "safe_num", "extract_beta", "selection_summary")
   ) %dopar% {
-    
+
     results <- data.frame(
       rep = rep(i, nmethods),
       method = methods,
@@ -294,19 +313,19 @@ real_slasso <- function(
       selected_features = NA_real_,
       sparsity = NA_real_
     )
-    
+
     trainid <- sample.int(n, size = ntrain)
     testid <- setdiff(seq_len(n), trainid)
     foldid <- sample(rep(seq_len(nfolds), length.out = ntrain))
-    
+
     # --------------------------------------------------------
     # 1. GLASSO: tuning and fit by cv.grpreg
     # --------------------------------------------------------
-    
+
     counter <- 1
-    
+
     # ---- CV for lambda selection ----
-    
+
     cvmod <- grpreg::cv.grpreg(
       X = X[trainid, ],
       y = y[trainid],
@@ -321,13 +340,13 @@ real_slasso <- function(
       dfmax = ncol(X),
       gmax = length(unique(group_membership))
     )
-    
+
     best_lambda <- cvmod$lambda.min
-    
+
     # ---- Final fit without CV ----
-    
+
     tic <- proc.time()
-    
+
     fit <- grpreg::grpreg(
       X = X[trainid, ],
       y = y[trainid],
@@ -340,11 +359,11 @@ real_slasso <- function(
       dfmax = ncol(X),
       gmax = length(unique(group_membership))
     )
-    
+
     toc <- proc.time() - tic
-    
+
     pred <- predict(fit, X[testid, ])
-    
+
     results$time[counter] <- toc[3]
     results$iter[counter] <- safe_sum(fit$iter)
     results$mse[counter] <- mean((y[testid] - pred)^2)
@@ -356,21 +375,21 @@ real_slasso <- function(
     results$selected_groups[counter] <- sel$selected_groups
     results$selected_features[counter] <- sel$selected_features
     results$sparsity[counter] <- sel$sparsity
-    
+
     # --------------------------------------------------------
     # 2. ADELIE: select alpha by CV, then refit selected alpha
     # --------------------------------------------------------
-    
+
     counter <- 2
-    
+
     x_train <- X[trainid, ]
     y_train <- y[trainid]
     x_test  <- X[testid, ]
-    
+
     # ---- CV for alpha/lambda selection ----
-    
+
     adelie_fits <- lapply(alpha_seq, function(a) {
-      
+
       adelie::cv.grpnet(
         X = x_train,
         glm = adelie::glm.gaussian(y = y_train),
@@ -388,32 +407,32 @@ real_slasso <- function(
         newton_max_iters = maxit,
         early_exit = FALSE
       )
-      
+
     })
-    
+
     adelie_cvm <- sapply(adelie_fits, function(fit) {
       min(fit$cvm, na.rm = TRUE)
     })
-    
+
     best_ind <- which.min(adelie_cvm)
-    
+
     best_alpha <- alpha_seq[best_ind]
     best_lambda <- adelie_fits[[best_ind]]$lambda.min
-    
+
     if (!is.finite(best_lambda)) {
       lambda_path <- adelie_fits[[best_ind]]$lambda
-      
+
       best_lambda <- min(
         lambda_path[is.finite(lambda_path) & lambda_path > 0],
         na.rm = TRUE
       )
     }
-    
-    
+
+
     # ---- Final fit without CV ----
-    
+
     tic <- proc.time()
-    
+
     fit <- adelie::grpnet(
       X = x_train,
       glm = adelie::glm.gaussian(y = y_train),
@@ -429,11 +448,11 @@ real_slasso <- function(
       newton_max_iters = maxit,
       early_exit = FALSE
     )
-    
+
     toc <- proc.time() - tic
-    
-    
-    
+
+
+
     pred <- getS3method(
       f = "predict",
       class = "grpnet",
@@ -443,7 +462,7 @@ real_slasso <- function(
       newx = x_test,
       lambda = best_lambda
     )
-    
+
     results$time[counter] <- toc[3]
     results$iter[counter] <- NA_real_
     results$mse[counter] <- mean((y[testid] - pred)^2)
@@ -460,17 +479,17 @@ real_slasso <- function(
     results$selected_groups[counter] <- sel$selected_groups
     results$selected_features[counter] <- sel$selected_features
     results$sparsity[counter] <- sel$sparsity
-    
+
     # --------------------------------------------------------
     # 3. GENET: select alpha by CV, then refit selected alpha
     # --------------------------------------------------------
-    
+
     counter <- 3
-    
+
     # ---- CV for alpha/lambda selection ----
-    
+
     grpnet_fits <- lapply(alpha_seq, function(a) {
-      
+
       grpnet::cv.grpnet(
         x = X[trainid, ],
         y = y[trainid],
@@ -483,22 +502,22 @@ real_slasso <- function(
         lambda.min.ratio = lambda_min_ratio,
         verbose = FALSE
       )
-      
+
     })
-    
+
     grpnet_cvm <- sapply(grpnet_fits, function(fit) {
       min(fit$cvm, na.rm = TRUE)
     })
-    
+
     best_ind <- which.min(grpnet_cvm)
-    
+
     best_alpha <- alpha_seq[best_ind]
     best_lambda <- grpnet_fits[[best_ind]]$lambda.min
-    
+
     # ---- Final fit without CV ----
-    
+
     tic <- proc.time()
-    
+
     fit <- grpnet::grpnet(
       x = X[trainid, ],
       y = y[trainid],
@@ -508,9 +527,9 @@ real_slasso <- function(
       thresh = eps,
       maxit = maxit
     )
-    
+
     toc <- proc.time() - tic
-    
+
     pred <- getS3method(
       f = "predict",
       class = "grpnet",
@@ -519,7 +538,7 @@ real_slasso <- function(
       fit,
       newx = X[testid, ]
     )
-    
+
     results$time[counter] <- toc[3]
     results$iter[counter] <- safe_sum(fit$npasses)
     results$mse[counter] <- mean((y[testid] - pred)^2)
@@ -535,13 +554,13 @@ real_slasso <- function(
     results$selected_groups[counter] <- sel$selected_groups
     results$selected_features[counter] <- sel$selected_features
     results$sparsity[counter] <- sel$sparsity
-    
+
     # --------------------------------------------------------
     # 4. SGLASSO: select alpha and d by CV, then final fit
     # --------------------------------------------------------
-    
+
     counter <- 4
-    
+
     sglasso_fits <- lapply(alpha_seq, function(a) {
       sglasso::cv.sglasso(
         X = X[trainid, ],
@@ -552,21 +571,24 @@ real_slasso <- function(
         lambda.min.ratio = lambda_min_ratio,
         alpha = a,
         eps = eps,
-        max_iter = maxit
+        max_iter = maxit,
+        standardize = standardize,
+        screen = sglasso_screen,
+        transform = sglasso_transform
       )
     })
-    
+
     sglasso_cve <- sapply(sglasso_fits, function(fit) {
       min(fit$cve, na.rm = TRUE)
     })
-    
+
     best_ind <- which.min(sglasso_cve)
     best_alpha <- alpha_seq[best_ind]
     best_d <- sglasso_fits[[best_ind]]$d.min
     best_lambda <- sglasso_fits[[best_ind]]$lambda.min
-    
+
     tic <- proc.time()
-    
+
     fit <- sglasso::sglasso(
       X = X[trainid, ],
       Y = y[trainid],
@@ -575,11 +597,14 @@ real_slasso <- function(
       alpha = best_alpha,
       lambda = best_lambda,
       eps = eps,
-      max_iter = maxit
+      max_iter = maxit,
+      standardize = standardize,
+      screen = sglasso_screen,
+      transform = sglasso_transform
     )
-    
+
     toc <- proc.time() - tic
-    
+
     pred <- as.numeric(
       predict(
         fit,
@@ -587,8 +612,8 @@ real_slasso <- function(
         type = "response"
       )
     )
-    
-    
+
+
     results$time[counter] <- toc[3]
     results$iter[counter] <- safe_sum(fit$iter)
     results$mse[counter] <- mean((y[testid] - pred)^2)
@@ -596,18 +621,25 @@ real_slasso <- function(
     results$alpha[counter] <- best_alpha
     results$lambda[counter] <- best_lambda
     results$d[counter] <- safe_num(best_d)
-    beta_hat <- extract_beta(fit, p = ncol(X))
+    beta_hat <- extract_beta(
+      fit,
+      p = ncol(X),
+      lambda = best_lambda,
+      coef_fun = function(object, lambda = NULL) {
+        stats::coef(object, lambda = lambda, d = best_d)
+      }
+    )
     sel <- selection_summary(beta_hat, group_membership)
     results$selected_groups[counter] <- sel$selected_groups
     results$selected_features[counter] <- sel$selected_features
     results$sparsity[counter] <- sel$sparsity
-    
+
     # --------------------------------------------------------
     # 5. GSCAD: tuning and fit by cv.grpreg
     # --------------------------------------------------------
-    
+
     counter <- 5
-    
+
     cvmod <- grpreg::cv.grpreg(
       X = X[trainid, ],
       y = y[trainid],
@@ -622,13 +654,13 @@ real_slasso <- function(
       dfmax = ncol(X),
       gmax = length(unique(group_membership))
     )
-    
+
     best_lambda <- cvmod$lambda.min
-    
+
     # ---- Final fit without CV ----
-    
+
     tic <- proc.time()
-    
+
     fit <- grpreg::grpreg(
       X = X[trainid, ],
       y = y[trainid],
@@ -641,11 +673,11 @@ real_slasso <- function(
       dfmax = ncol(X),
       gmax = length(unique(group_membership))
     )
-    
+
     toc <- proc.time() - tic
-    
+
     pred <- predict(fit, X[testid, ])
-    
+
     results$time[counter] <- toc[3]
     results$iter[counter] <- safe_sum(fit$iter)
     results$mse[counter] <- mean((y[testid] - pred)^2)
@@ -657,11 +689,11 @@ real_slasso <- function(
     results$selected_groups[counter] <- sel$selected_groups
     results$selected_features[counter] <- sel$selected_features
     results$sparsity[counter] <- sel$sparsity
-    
+
     # --------------------------------------------------------
     # 6. GMCP: tuning and fit by cv.grpreg
     # --------------------------------------------------------
-    
+
     counter <- 6
     cvmod <- grpreg::cv.grpreg(
       X = X[trainid, ],
@@ -677,13 +709,13 @@ real_slasso <- function(
       dfmax = ncol(X),
       gmax = length(unique(group_membership))
     )
-    
+
     best_lambda <- cvmod$lambda.min
-    
+
     # ---- Final fit without CV ----
-    
+
     tic <- proc.time()
-    
+
     fit <- grpreg::grpreg(
       X = X[trainid, ],
       y = y[trainid],
@@ -696,11 +728,11 @@ real_slasso <- function(
       dfmax = ncol(X),
       gmax = length(unique(group_membership))
     )
-    
+
     toc <- proc.time() - tic
-    
+
     pred <- predict(fit, X[testid, ])
-    
+
     results$time[counter] <- toc[3]
     results$iter[counter] <- safe_sum(fit$iter)
     results$mse[counter] <- mean((y[testid] - pred)^2)
@@ -712,11 +744,11 @@ real_slasso <- function(
     results$selected_groups[counter] <- sel$selected_groups
     results$selected_features[counter] <- sel$selected_features
     results$sparsity[counter] <- sel$sparsity
-    
+
     results$method <- factor(results$method, levels = methods)
-    
+
     results
   }
-  
+
   return(results_from_foreach)
 }

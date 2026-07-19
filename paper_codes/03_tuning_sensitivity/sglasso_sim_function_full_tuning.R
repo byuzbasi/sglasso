@@ -65,50 +65,50 @@ github_packages <- list(
 install_and_load_packages <- function(pkgs = required_packages,
                                       install_missing = TRUE,
                                       lib = Sys.getenv("R_LIBS_USER")) {
-  
+
   if (nzchar(lib)) {
     dir.create(lib, recursive = TRUE, showWarnings = FALSE)
     .libPaths(c(lib, .libPaths()))
   } else {
     lib <- .libPaths()[1]
   }
-  
+
   options(repos = c(CRAN = "https://cloud.r-project.org"))
-  
+
   for (pkg in pkgs) {
-    
+
     if (!requireNamespace(pkg, quietly = TRUE)) {
-      
+
       if (!install_missing) {
         stop("Package not installed: ", pkg)
       }
-      
+
       message("Installing missing package: ", pkg)
-      
+
       if (pkg %in% names(github_packages)) {
-        
+
         if (!requireNamespace("remotes", quietly = TRUE)) {
           install.packages("remotes", lib = lib)
         }
-        
+
         remotes::install_github(
           github_packages[[pkg]],
           lib = lib,
           upgrade = "never",
           force = FALSE
         )
-        
+
       } else {
-        
+
         install.packages(pkg, lib = lib)
       }
     }
-    
+
     suppressPackageStartupMessages(
       library(pkg, character.only = TRUE)
     )
   }
-  
+
   invisible(TRUE)
 }
 
@@ -341,14 +341,14 @@ block_sim_data_exchangeable_fast <- function(n_train = 100,
                                                                 "mixed_signs",
                                                                 "weak_strong_mixed")) {
   signal_pattern <- match.arg(signal_pattern)
-  
+
   if (rho_b < 0 || rho_w < rho_b || rho_w > 1) {
     stop("Fast exchangeable generator requires 0 <= rho_b <= rho_w <= 1.")
   }
-  
+
   p <- pj * J
   if (is.null(nonzero_id)) nonzero_id <- sample(J, strong_J)
-  
+
   make_X <- function(n) {
     if (n == 0) return(matrix(numeric(0), nrow = 0, ncol = p))
     common_factor <- rnorm(n)
@@ -358,38 +358,38 @@ block_sim_data_exchangeable_fast <- function(n_train = 100,
       sqrt(rho_w - rho_b) * group_factor[, rep(seq_len(J), each = pj), drop = FALSE] +
       sqrt(1 - rho_w) * noise
   }
-  
+
   X_train <- make_X(n_train)
   X_val <- make_X(n_val)
   X_test <- make_X(n_test)
-  
+
   group <- rep(seq_len(J), each = pj)
-  
+
   beta_values <- make_beta_group_values(
     strong_J = strong_J,
     eff_nonzero = eff_nonzero,
     signal_pattern = signal_pattern
   )
-  
+
   beta <- rep(0, p)
   for (k in seq_len(strong_J)) {
     idx <- ((nonzero_id[k] - 1) * pj + 1):(nonzero_id[k] * pj)
     beta[idx] <- beta_values[k]
   }
-  
+
   group_sum <- as.numeric(rowsum(beta, group, reorder = FALSE))
   risk_null <- (1 - rho_w) * sum(beta^2) +
     (rho_w - rho_b) * sum(group_sum^2) +
     rho_b * sum(beta)^2
   sigma <- sqrt(risk_null / snr)
   error_null <- risk_null + sigma^2
-  
+
   y_train <- as.numeric(X_train %*% beta + rnorm(n_train) * sigma)
   y_val <- as.numeric(X_val %*% beta + rnorm(n_val) * sigma)
   y_test <- as.numeric(X_test %*% beta + rnorm(n_test) * sigma)
-  
+
   true_groups <- sort(nonzero_id)
-  
+
   list(
     X_train = X_train,
     X_val = X_val,
@@ -598,30 +598,30 @@ compute_tuning_score <- function(
     criterion = c("Min_val", "Val_Risk", "Risk", "AIC", "BIC", "EBIC", "GCV"),
     ebic_gamma = 0.5
 ) {
-  
+
   criterion <- match.arg(criterion)
-  
+
   beta_path <- B[-1, , drop = FALSE]
-  
+
   pred_val <- make_intercept_design(std_dat$X_val) %*% B
   y_val_centered <- dat$y_val - std_dat$y_center
-  
+
   val_mse <- colMeans((y_val_centered - pred_val)^2)
-  
+
   if (criterion == "Min_val") {
     return(val_mse)
   }
-  
+
   if (criterion == "Val_Risk") {
     true_val <- as.numeric(dat$X_val %*% dat$beta - std_dat$y_center)
-    
+
     val_risk <- colMeans(
       sweep(pred_val, 1, true_val, "-")^2
     )
-    
+
     return(val_risk)
   }
-  
+
   if (criterion == "Risk") {
     B_orig <- standardized_coef_to_original(
       B,
@@ -639,37 +639,37 @@ compute_tuning_score <- function(
     }
     return(risk)
   }
-  
+
   pred_train <- make_intercept_design(std_dat$X_train) %*% B
   rss <- colSums((std_dat$y_train - pred_train)^2)
-  
+
   n <- nrow(std_dat$X_train)
   J <- dat$J
-  
+
   df_features <- colSums(abs(beta_path) > 1e-8) + 1
-  
+
   df_groups <- apply(beta_path, 2, function(b) {
     length(unique(dat$group[abs(b) > 1e-8]))
   })
-  
+
   if (criterion == "AIC") {
     return(n * log(pmax(rss / n, .Machine$double.eps)) + 2 * df_features)
   }
-  
+
   if (criterion == "BIC") {
     return(n * log(pmax(rss / n, .Machine$double.eps)) + log(n) * df_features)
   }
-  
+
   if (criterion == "EBIC") {
     ebic_penalty <- 2 * ebic_gamma * lchoose(J, pmin(df_groups, J))
-    
+
     return(
       n * log(pmax(rss / n, .Machine$double.eps)) +
         log(n) * df_features +
         ebic_penalty
     )
   }
-  
+
   if (criterion == "GCV") {
     return((rss / n) / pmax((1 - df_features / n)^2, .Machine$double.eps))
   }
@@ -1046,9 +1046,9 @@ fit_genet <- function(dat,
                       ebic_gamma = 0.5,
                       lambda_min_ratio = 0.01) {
   out <- tryCatch({
-    
+
     t0 <- proc.time()
-    
+
     fits <- parallel_lapply(alpha_seq, function(a) {
       grpnet::grpnet(
         std_dat$X_train,
@@ -1061,15 +1061,15 @@ fit_genet <- function(dat,
         lambda.min.ratio = lambda_min_ratio
       )
     }, cores = alpha_cores)
-    
+
     elapsed <- (proc.time() - t0)[3]
-    
+
     coef_grpnet <- getS3method(
       "coef",
       "grpnet",
       envir = asNamespace("grpnet")
     )
-    
+
     best <- list(
       score = Inf,
       alpha_id = NA_integer_,
@@ -1077,11 +1077,11 @@ fit_genet <- function(dat,
       B = NULL,
       fit = NULL
     )
-    
+
     for (ai in seq_along(fits)) {
-      
+
       B <- as.matrix(coef_grpnet(fits[[ai]]))
-      
+
       score <- compute_tuning_score(
         B = B,
         dat = dat,
@@ -1089,15 +1089,15 @@ fit_genet <- function(dat,
         criterion = tuning_criterion,
         ebic_gamma = ebic_gamma
       )
-      
+
       score[!is.finite(score)] <- Inf
-      
+
       if (all(is.infinite(score))) {
         next
       }
-      
+
       li <- which.min(score)
-      
+
       if (score[li] < best$score) {
         best <- list(
           score = score[li],
@@ -1108,11 +1108,11 @@ fit_genet <- function(dat,
         )
       }
     }
-    
+
     if (is.null(best$B)) {
       stop("GENET failed: all tuning scores are non-finite.")
     }
-    
+
     evaluate_beta(
       method = "GENET",
       beta_hat = best$B,
@@ -1145,7 +1145,7 @@ fit_genet <- function(dat,
       tuning_criterion
     )
   })
-  
+
   out
 }
 
@@ -1194,7 +1194,7 @@ fit_sglasso <- function(dat,
     for (ai in seq_along(fits)) {
       for (di in seq_along(d_seq)) {
 
-        B <- fits[[ai]]$betas[, , di, drop = FALSE][, , 1]
+        B <- coef(fits[[ai]], d = d_seq[di], drop = FALSE)[, , 1]
 
         score <- compute_tuning_score(
           B = B,
@@ -1415,7 +1415,7 @@ simulation_sglasso <- function(
     signal_pattern = "homogeneous",
     signal_pattern_grid = NULL,
     ...) {
-  
+
   ############################################################
   # This wrapper runs the simulation over:
   #   - simulation repetitions,
@@ -1440,29 +1440,29 @@ simulation_sglasso <- function(
   #   rho_b_grid = seq(0, 0.9, by = 0.1)
   # )
   ############################################################
-  
+
   if (is.null(snr_grid)) {
     snr_grid <- snr
   }
-  
+
   if (is.null(rho_b_grid)) {
     rho_b_grid <- rho_b
   }
-  
+
   if (is.null(signal_pattern_grid)) {
     signal_pattern_grid <- signal_pattern
   }
-  
+
   snr_grid <- as.numeric(snr_grid)
   rho_b_grid <- as.numeric(rho_b_grid)
-  
+
   ############################################################
   # Create one task for every combination of:
   #   SNR x rho_b x signal_pattern_val x replicate.
   #
   # This avoids nested foreach loops, which are not supported by doRNG.
   ############################################################
-  
+
   task_grid <- expand.grid(
     signal_pattern_val = signal_pattern_grid,
     snr_val = snr_grid,
@@ -1470,54 +1470,56 @@ simulation_sglasso <- function(
     rep_id = seq_len(repeatnum),
     stringsAsFactors = FALSE
   )
-  
+
   ############################################################
   # Parallel version
   ############################################################
-  
+
   if (cores > 1) {
-    
+
     doParallel::registerDoParallel(cores = cores)
     doRNG::registerDoRNG(seed)
-    
+
     out <- foreach::foreach(
       ii = seq_len(nrow(task_grid)),
       .combine = dplyr::bind_rows,
       .packages = required_packages
     ) %dopar% {
-      
+
       fit_one_sim_replicate(
         rep_id = task_grid$rep_id[ii],
         seed = seed,
         snr = task_grid$snr_val[ii],
         rho_b = task_grid$rho_b_val[ii],
+        signal_pattern = task_grid$signal_pattern_val[ii],
         ...
       )
     }
-    
+
     foreach::registerDoSEQ()
-    
+
   } else {
-    
+
     ############################################################
     # Sequential version
     ############################################################
-    
+
     out <- dplyr::bind_rows(lapply(seq_len(nrow(task_grid)), function(ii) {
-      
+
       fit_one_sim_replicate(
         rep_id = task_grid$rep_id[ii],
         seed = seed,
         snr = task_grid$snr_val[ii],
         rho_b = task_grid$rho_b_val[ii],
+        signal_pattern = task_grid$signal_pattern_val[ii],
         ...
       )
-      
+
     }))
   }
-  
+
   rownames(out) <- NULL
-  
+
   out
 }
 
@@ -1528,16 +1530,16 @@ simulation_sglasso <- function(
 get_paper_settings <- function() {
   data.frame(
     setting = c("LD-4", "LD-8", "LD-12", "HD-10", "HD-20", "HD-40"),
-    
+
     n_train = c(500, 500, 500, 100, 100, 100),
     n_val   = c(200, 200, 200, 100, 100, 100),
     n_test  = c(200, 200, 200, 100, 100, 100),
-    
+
     p        = c(100, 100, 100, 1000, 1000, 1000),
     strong_J = c(4, 8, 12, 10, 20, 40),
     J        = c(20, 20, 20, 200, 200, 200),
     pj       = c(5, 5, 5, 5, 5, 5),
-    
+
     dimensionality = c("LD", "LD", "LD", "HD", "HD", "HD"),
     sparsity_level = c("Sparse", "Moderate", "Dense",
                        "Sparse", "Moderate", "Dense")
@@ -1697,11 +1699,11 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
     )
     flush.console()
   }
-  
+
   make_task_key <- function(p_value, J_value, rep_id) {
     paste(p_value, J_value, rep_id, sep = "__")
   }
-  
+
   save_scalability_checkpoint <- function(task_result,
                                           axis_name,
                                           p_value,
@@ -1712,11 +1714,11 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
     if (is.null(checkpoint_dir)) {
       return(task_result)
     }
-    
+
     task_result$task_id <- task_id
     task_result$reused_duplicate <- reused_duplicate
     task_result$checkpoint_time <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
-    
+
     checkpoint_file <- file.path(
       checkpoint_dir,
       sprintf(
@@ -1897,7 +1899,7 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
   )
   p_tasks$J <- as.integer(p_tasks$p / pj)
   p_tasks$axis <- "p"
-  
+
   j_tasks <- expand.grid(
     J = J_grid,
     rep_id = seq_len(repeatnum),
@@ -1905,7 +1907,7 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
   )
   j_tasks$p <- as.integer(j_tasks$J * pj)
   j_tasks$axis <- "J"
-  
+
   all_tasks <- rbind(
     p_tasks[, c("axis", "p", "J", "rep_id")],
     j_tasks[, c("axis", "p", "J", "rep_id")]
@@ -1918,22 +1920,22 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
     all_tasks$rep_id,
     USE.NAMES = FALSE
   )
-  
+
   fit_tasks <- all_tasks[!duplicated(all_tasks$key), c("key", "p", "J", "rep_id", "task_id")]
   row.names(fit_tasks) <- NULL
-  
+
   progress_msg(
     "Scalability task plan: output_tasks=%d | unique_fit_tasks=%d | cores=%d",
     nrow(all_tasks),
     nrow(fit_tasks),
     cores
   )
-  
+
   run_fit_task <- function(ii) {
     fit_task <- fit_tasks[ii, , drop = FALSE]
     task_rows <- all_tasks[all_tasks$key == fit_task$key[[1]], , drop = FALSE]
     task_start <- proc.time()[3]
-    
+
     progress_msg(
       "[%d/%d] Scalability fit started | p=%d | J=%d | rep=%d",
       ii,
@@ -1942,7 +1944,7 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       fit_task$J[[1]],
       fit_task$rep_id[[1]]
     )
-    
+
     set.seed(seed + fit_task$task_id[[1]])
     fit_result <- run_one_runtime(
       axis_name = task_rows$axis[[1]],
@@ -1950,7 +1952,7 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       J_value = fit_task$J[[1]],
       rep_id = fit_task$rep_id[[1]]
     )
-    
+
     output <- lapply(seq_len(nrow(task_rows)), function(jj) {
       task_result <- fit_result
       task_result$axis <- task_rows$axis[[jj]]
@@ -1964,7 +1966,7 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
         reused_duplicate = jj > 1L
       )
     })
-    
+
     progress_msg(
       "[%d/%d] Scalability fit finished | p=%d | J=%d | rep=%d | output_tasks=%d | elapsed=%.2f sec",
       ii,
@@ -1975,16 +1977,16 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
       nrow(task_rows),
       proc.time()[3] - task_start
     )
-    
+
     dplyr::bind_rows(output)
   }
-  
+
   if (cores > 1L && nrow(fit_tasks) > 1L) {
     worker_count <- min(cores, nrow(fit_tasks))
     progress_msg("Starting parallel scalability fits with %d workers", worker_count)
     doParallel::registerDoParallel(cores = worker_count)
     doRNG::registerDoRNG(seed)
-    
+
     out <- foreach::foreach(
       ii = seq_len(nrow(fit_tasks)),
       .combine = dplyr::bind_rows,
@@ -2004,7 +2006,7 @@ run_scalability_experiment <- function(p_grid = c(1000, 5000, 10000),
     ) %dopar% {
       run_fit_task(ii)
     }
-    
+
     foreach::registerDoSEQ()
   } else {
     progress_msg("Starting serial scalability fits")
