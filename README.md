@@ -13,7 +13,9 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 This package provides functions for computing a group-wise variable
 selection method, called Scaled Group Lasso (SGLASSO), in the presence
-of correlations among groups.
+of correlations among groups. The package accompanies the article
+“Collinear Groupwise Selection via Scaled Group Lasso,” accepted for
+publication in *The American Statistician*.
 
 ## Installation
 
@@ -32,13 +34,13 @@ to fix it.
 ## Screening rules
 
 `sglasso()` includes optional screening rules through the `screen` argument:
-`"shifted_SSR"`, `"shifted_SSR_fast"`, and `"none"`. The shifted SSR rule
-accounts for the shifted ridge component in the SGLASSO penalty. Screening rules
-are most useful for large-scale problems with many inactive groups. For small or
-moderate problems, `screen = "none"` may be equally fast or faster because it
-avoids screening overhead while the final KKT checks still enforce the fitted
-solution. The `shifted_SSR_fast` option is experimental and delays rest-set KKT
-checks to study the speed-accuracy trade-off.
+`"SSR"`, `"SSR_fast"`, and `"none"`. The SSR rule accounts for the shifted
+ridge component in the SGLASSO penalty. Screening rules are most useful for
+large-scale problems with many inactive groups. For small or moderate problems,
+`screen = "none"` may be equally fast or faster because it avoids screening
+overhead while the final KKT checks still enforce the fitted solution. The
+`SSR_fast` option is experimental and delays rest-set KKT checks to study the
+speed-accuracy trade-off.
 
 ## Example
 
@@ -68,5 +70,6 @@ plot(model_CV,type.tun = "d")
 
 # References
 
-1.  Yüzbaşı, B and Cao, J. (2025). Collinear Groupwise Selection via
-    Scaled Group Lasso.
+1.  Yüzbaşı, B. and Cao, J. (2026). Collinear Groupwise Selection via
+    Scaled Group Lasso. Accepted for publication in *The American
+    Statistician*.

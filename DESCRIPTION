@@ -5,7 +5,7 @@ Version: 1.1.13
 Date: 2026-06-29
 Author: Bahadir Yuzbasi and Jiguo Cao
 Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
-Description: This package integrates the benefits of ridge, lasso, and James-Stein estimates, resulting in improved prediction accuracy for grouped feature selection.
+Description: Implements the Scaled Group Lasso method for grouped variable selection in regression models with groupwise collinearity.
 License: GPL (>= 3)
 Encoding: UTF-8
 Depends:

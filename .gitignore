@@ -46,6 +46,8 @@ paper_codes/results/
 paper_codes/tmp/
 paper_codes/.DS_Store
 sglasso_package/
+TAS_SGLASSO_*
+texput.log
 R/.DS_Store
 data/.DS_Store
 src/.DS_Store
