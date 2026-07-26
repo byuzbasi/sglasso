@@ -1,8 +1,8 @@
 Package: sglasso
 Type: Package
 Title: Scaled Group Lasso
-Version: 1.1.13
-Date: 2026-06-29
+Version: 1.1.14
+Date: 2026-07-26
 Author: Bahadir Yuzbasi and Jiguo Cao
 Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
 Description: Implements the Scaled Group Lasso method for grouped variable selection in regression models with groupwise collinearity.

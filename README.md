@@ -14,8 +14,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 This package provides functions for computing a group-wise variable
 selection method, called Scaled Group Lasso (SGLASSO), in the presence
 of correlations among groups. The package accompanies the article
-“Collinear Groupwise Selection via Scaled Group Lasso,” accepted for
-publication in *The American Statistician*.
+[“Collinear Groupwise Selection via Scaled Group Lasso”](https://doi.org/10.1080/00031305.2026.2709494),
+published in *The American Statistician*.
 
 ## Installation
 
@@ -71,5 +71,5 @@ plot(model_CV,type.tun = "d")
 # References
 
 1.  Yüzbaşı, B. and Cao, J. (2026). Collinear Groupwise Selection via
-    Scaled Group Lasso. Accepted for publication in *The American
-    Statistician*.
+    Scaled Group Lasso. *The American Statistician*.
+    https://doi.org/10.1080/00031305.2026.2709494
