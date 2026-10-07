@@ -1,0 +1,46 @@
+CoRSIVSZ - source attribution and distribution notice
+
+This is a processed analysis panel from GSE84727 (development) and GSE80417
+(independent test), using the published CoRSIV/ESS/SIV cluster annotation.
+It is not a newly collected dataset or the original paper's 1,982-region panel.
+Original data sources and creators must be credited when these data are reused.
+
+Original publication:
+Gunasekara CJ, Hannon E, MacKay H, et al. (2021).
+A machine learning case-control classifier for schizophrenia based on DNA
+methylation in blood. Translational Psychiatry 11, 412.
+https://doi.org/10.1038/s41398-021-01496-3
+
+Measurements:
+https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE84727
+https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80417
+GEO's distribution statement: https://www.ncbi.nlm.nih.gov/geo/info/disclaimer.html
+NCBI places no restrictions on use or distribution of GEO data; this is not
+an assertion that third-party rights are transferred to the package authors.
+The package software license does not relicense the original measurements.
+
+Annotation resource:
+https://github.com/waterlandlab/CoRSIV-Methylation-based-SZ-Risk-Score
+The following original notice is retained for the annotation resource:
+
+MIT License
+
+Copyright (c) 2020 Waterland Lab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,0 +1,14 @@
+# Generated numerical outputs do not belong in the publication folder.
+*.rds
+*.rda
+*.RData
+*.tar.gz
+*.pdf
+*.log
+*.o
+*.so
+*.dll
+outputs/
+results/
+logs/
+.DS_Store

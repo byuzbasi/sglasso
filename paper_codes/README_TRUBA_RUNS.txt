@@ -4,8 +4,9 @@ TRUBA ALL RUNS
 ARTICLE-SPECIFIC REPRODUCTION CODE
 ---------------------------------
 This directory accompanies:
-Yuzbasi, B. and Cao, J. (2026). Collinear Groupwise Selection via
-Scaled Group Lasso. The American Statistician.
+Yüzbaşı, B. and Cao, J. (2026). Collinear Groupwise Selection via
+Scaled Group Lasso. The American Statistician, 1–23.
+Advance online publication, 17 September 2026.
 https://doi.org/10.1080/00031305.2026.2709494
 
 The reusable sglasso package source is in the repository-level R/ and src/

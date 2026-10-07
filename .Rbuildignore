@@ -9,6 +9,7 @@
 ^Simulations$
 ^Truba All Runs slasso paper$
 ^paper_codes$
+^logistic_paper_codes$
 ^sglasso_package$
 ^adelie-main$
 ^grpreg-main$
@@ -17,3 +18,12 @@
 ^real_data_results$
 ^results_scalability$
 ^logistic_prework$
+^data-raw$
+^output$
+^tmp$
+^tools$
+^_pkgdown\.yml$
+^pkgdown$
+^CITATION\.cff$
+^\.github$
+^vignettes/articles$

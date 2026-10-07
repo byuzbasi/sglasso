@@ -1,0 +1,83 @@
+# Reproducing the studies
+
+## Package usage is not the article protocol
+
+The general package API fits and predicts with SGLASSO. The
+article-specific scripts retain study designs, seeds, targets, grids,
+comparator settings, numerical validation and checkpoint rules.
+Substituting package defaults does not reproduce all calculations of a
+recorded study.
+
+| Resource | Scope |
+|:---|:---|
+| [`paper_codes/`](https://github.com/byuzbasi/sglasso/tree/main/paper_codes) | Published Gaussian SGLASSO article, cited below |
+| [`logistic_paper_codes/`](https://github.com/byuzbasi/sglasso/tree/main/logistic_paper_codes) | Logistic manuscript; study-specific code and settings |
+
+The published Gaussian study is: Yüzbaşı, B. and Cao, J. (2026).
+**Collinear Groupwise Selection via Scaled Group Lasso.** *The American
+Statistician*, 1–23. Advance online publication, 17 September 2026.
+[doi:10.1080/00031305.2026.2709494](https://doi.org/10.1080/00031305.2026.2709494).
+
+The logistic publication directory contains code/settings only: no
+measurements, fitted models, figures, manuscript PDFs or result
+archives. The package’s own documentation images are separate
+illustration assets.
+
+## Logistic study: staged execution
+
+1.  Obtain the exact separately distributed CoRSIVSZ file for the
+    external application. Simulation fitting needs no measurement
+    matrix.
+2.  Run the code manifest verification and the small local validation
+    suite.
+3.  Explicitly launch the selected full study in your own terminal,
+    using a new output directory outside the immutable code folder.
+4.  Resume with the identical settings and input paths plus `--resume`.
+5.  Verify final manifests, complete task counts and numerical gates
+    before interpreting results. A completion marker alone is
+    insufficient.
+
+These commands are examples for the code-only distribution. Replace
+`/absolute/...` paths; they are **not executed** by this guide.
+
+``` bash
+cd /absolute/path/to/sglasso/logistic_paper_codes
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+export BLIS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+Rscript --vanilla reproduce.R --mode=verify
+Rscript --vanilla reproduce.R --mode=validate \
+  --data=/absolute/CoRSIVSZ_v1.rds --output=/absolute/new_checks
+```
+
+The [run-code
+README](https://github.com/byuzbasi/sglasso/blob/main/logistic_paper_codes/README.txt)
+gives full production, progress, resume and verification commands,
+resources and dependency requirements. New runs record their own
+code/data signatures and software versions. The research scripts require
+Unix fork support; this limitation is distinct from the general package
+API.
+
+## What remains fixed
+
+The simulation comprises eight scenarios with 50 repetitions each and
+six audit variants per task. The independent external study uses
+development-only five-fold CV followed by refitting; the external cohort
+is not used to select tuning parameters. AUC and MCC inference uses
+paired, class-stratified draws from fixed predictions. It does not refit
+models or tune the classification threshold. The run code retains all
+six variants while the report displays five methods: SGLASSO, Group
+ENET, Group Lasso, Group MCP and Group SCAD.
+
+## Evidence and limits
+
+Local validation is not a promise of convergence on every future
+dataset, proof of statistical superiority or validation on every
+operating system. Do not change tolerances or remove failed numerical
+gates to obtain a desired result. Preserve failure records, fix code
+locally and validate a new version.
+
+No full simulation, CV study or bootstrap study is executed by this
+website build. It uses small synthetic documentation examples and
+completed outputs for illustration. Hosting the separately distributed
+CoRSIVSZ data file remains a separate step; the original measurements
+are publicly available in GEO.

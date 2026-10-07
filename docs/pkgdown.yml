@@ -1,0 +1,13 @@
+pandoc: '3.8'
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  articles/binomial-and-cv: binomial-and-cv.html
+  articles/data-dictionary: data-dictionary.html
+  articles/gallery: gallery.html
+  articles/getting-started: getting-started.html
+  articles/reproducibility: reproducibility.html
+last_built: 2026-10-07T18:04Z
+urls:
+  reference: https://byuzbasi.github.io/sglasso/reference
+  article: https://byuzbasi.github.io/sglasso/articles

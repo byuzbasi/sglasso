@@ -1,0 +1,60 @@
+url: https://byuzbasi.github.io/sglasso/
+destination: output/site/sglasso_v3
+template:
+  bootstrap: 5
+  light-switch: false
+  bslib:
+    bg: "#FBFCFF"
+    fg: "#203448"
+    primary: "#087F8C"
+    link-color: "#087F8C"
+    border-radius: "0.65rem"
+home:
+  sidebar:
+    html: pkgdown/sidebar.html
+news:
+  cran_dates: false
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Start here
+      href: articles/getting-started.html
+    articles:
+      text: Guides
+      menu:
+        - text: Binary responses and CV
+          href: articles/binomial-and-cv.html
+        - text: Data dictionary
+          href: articles/data-dictionary.html
+        - text: Example gallery
+          href: articles/gallery.html
+        - text: Reproducing the studies
+          href: articles/reproducibility.html
+    github:
+      text: GitHub
+      href: https://github.com/byuzbasi/sglasso
+reference:
+  - title: Fit and select
+    desc: Regularization paths and cross-validation for prespecified groups.
+    contents: [sglasso, cv.sglasso, select, select.sglasso, logLik.sglasso]
+  - title: Predict and extract
+    contents: [predict.sglasso, transform_sglasso_betas]
+  - title: Binary-response implementation
+    contents: [sglasso-binomial]
+  - title: Data and verified loaders
+    contents: [GenAtHum, CoRSIVSZ, load_CoRSIVSZ, download_CoRSIVSZ]
+  - title: Numerical diagnostics
+    contents: [benchmark_sglasso_screen_rules]
+  - title: Package overview
+    contents: [sglasso-package]
+articles:
+  - title: Learn sglasso
+    navbar: ~
+    contents: [articles/getting-started, articles/binomial-and-cv, articles/data-dictionary, articles/gallery, articles/reproducibility]
+footer:
+  structure:
+    left: developed_by
+    right: built_with

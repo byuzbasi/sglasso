@@ -9,6 +9,15 @@
 *.Rcheck/
 ..Rcheck/
 src/symbols.rds
+output/
+logistic_prework/
+/*.tar.gz
+/*.tar.gz.sha256
+/*.rds
+/*.rds.sha256
+/*.pdf
+/51_export_logistic_sglasso_replay_inputs_v11.R
+/51_export_logistic_sglasso_replay_inputs_v11.R.sha256
 README.html
 .DS_Store
 Real data applications -Truba/logs/

@@ -1,0 +1,9 @@
+design_id,scenario,n_train,n_validation,n_test,groups,group_size,active_group_count,rho_within,rho_between,prevalence,linear_predictor_sd,signal_pattern,description
+homogeneous,homogeneous_rhob_0.0,200,200,5000,200,3,10,0.9,0.0,0.5,1.1,homogeneous,Independent groups with homogeneous positive active-group signals
+homogeneous,homogeneous_rhob_0.3,200,200,5000,200,3,10,0.9,0.3,0.5,1.1,homogeneous,Exchangeable grouped design with homogeneous positive active-group signals
+homogeneous,homogeneous_rhob_0.9,200,200,5000,200,3,10,0.9,0.9,0.5,1.1,homogeneous,Exchangeable grouped design with homogeneous positive active-group signals
+weak_strong_mixed,weak_strong_mixed_rhob_0.0,200,200,5000,200,3,10,0.9,0.0,0.5,1.1,weak_strong_mixed,Independent groups with alternating-sign strong and weak active-group signals
+weak_strong_mixed,weak_strong_mixed_rhob_0.3,200,200,5000,200,3,10,0.9,0.3,0.5,1.1,weak_strong_mixed,Exchangeable grouped design with alternating-sign strong and weak active-group signals
+weak_strong_mixed,weak_strong_mixed_rhob_0.9,200,200,5000,200,3,10,0.9,0.9,0.5,1.1,weak_strong_mixed,Exchangeable grouped design with alternating-sign strong and weak active-group signals
+weak_strong_mixed,weak_strong_mixed_rhob_0.3_prev_0.1,200,200,5000,200,3,10,0.9,0.3,0.1,1.1,weak_strong_mixed,Exchangeable grouped design with alternating-sign signals and population prevalence 0.1
+weak_strong_mixed,weak_strong_mixed_rhob_0.9_prev_0.1,200,200,5000,200,3,10,0.9,0.9,0.1,1.1,weak_strong_mixed,Exchangeable grouped design with alternating-sign signals and population prevalence 0.1

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
+  <title id="title">sglasso — Scaled Group Lasso</title>
+  <desc id="desc">Grouped regression. Correlated predictors. Gaussian and binomial responses. Colored strands depict grouped predictors and target-directed shrinkage, not numerical results.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#10263C"/><stop offset="1" stop-color="#173C52"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0v40" fill="none" stroke="#B5D3DB" stroke-opacity=".06"/></pattern>
+  </defs>
+  <rect width="1200" height="340" rx="18" fill="url(#bg)"/>
+  <rect width="1200" height="340" rx="18" fill="url(#grid)"/>
+  <rect x="52" y="45" width="6" height="32" rx="3" fill="#54D6C1"/>
+  <text x="76" y="68" fill="#A7C6D3" font-family="Arial,Helvetica,sans-serif" font-size="17" letter-spacing="3">RESEARCH SOFTWARE / R</text>
+  <text x="52" y="156" fill="#FCFDFF" font-family="Arial,Helvetica,sans-serif" font-size="78" font-weight="700" letter-spacing="-3">sglasso</text>
+  <text x="54" y="198" fill="#DAE7ED" font-family="Arial,Helvetica,sans-serif" font-size="26">Scaled Group Lasso</text>
+  <text x="54" y="259" fill="#A7C6D3" font-family="Arial,Helvetica,sans-serif" font-size="23">Grouped regression. Correlated predictors.</text>
+  <text x="55" y="303" fill="#54D6C1" font-family="Arial,Helvetica,sans-serif" font-size="15" letter-spacing="2">GAUSSIAN + BINOMIAL · RCPPARMADILLO CORE</text>
+  <g fill="none" stroke-linecap="round" stroke-width="3">
+    <path d="M746 87c150-90 86 164 288 77" stroke="#54D6C1"/>
+    <path d="M746 104c150-90 86 147 288 60" stroke="#54D6C1" stroke-opacity=".6"/>
+    <path d="M746 122c150-90 86 129 288 42" stroke="#54D6C1" stroke-opacity=".35"/>
+    <path d="M746 162c110-104 130 78 288 2" stroke="#A9B7FF"/>
+    <path d="M746 180c110-104 130 60 288-16" stroke="#A9B7FF" stroke-opacity=".6"/>
+    <path d="M746 198c110-104 130 42 288-34" stroke="#A9B7FF" stroke-opacity=".35"/>
+    <path d="M746 240c135 76 186-128 288-76" stroke="#F2C078"/>
+    <path d="M746 258c135 76 186-146 288-94" stroke="#F2C078" stroke-opacity=".6"/>
+    <path d="M746 276c135 76 186-164 288-112" stroke="#F2C078" stroke-opacity=".35"/>
+  </g>
+  <circle cx="1046" cy="161" r="32" fill="#173C52" stroke="#A7C6D3" stroke-opacity=".25"/>
+  <circle cx="1046" cy="161" r="17" fill="#FCFDFF"/>
+  <text x="1046" y="230" text-anchor="middle" fill="#A7C6D3" font-family="Arial,Helvetica,sans-serif" font-size="15" letter-spacing="2">TARGET</text>
+</svg>

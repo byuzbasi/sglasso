@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "Please cite the software and the relevant study when using sglasso."
+type: software
+title: "sglasso: Scaled Group Lasso"
+version: "1.2.0"
+abstract: "Grouped Gaussian regression and binomial probability prediction with target-directed shrinkage. This file describes development source, not a tagged release."
+license: GPL-3.0-or-later
+repository-code: "https://github.com/byuzbasi/sglasso"
+url: "https://github.com/byuzbasi/sglasso"
+authors:
+  - family-names: "Yüzbaşı"
+    given-names: "Bahadır"
+    orcid: "https://orcid.org/0000-0002-6196-3201"
+  - family-names: "Cao"
+    given-names: "Jiguo"
+    orcid: "https://orcid.org/0000-0001-7417-6330"
+keywords: [grouped regression, scaled group lasso, correlated predictors, binary responses]
+preferred-citation:
+  type: article
+  title: "Collinear Groupwise Selection via Scaled Group Lasso"
+  journal: "The American Statistician"
+  year: 2026
+  date-published: "2026-09-17"
+  start: 1
+  end: 23
+  status: advance-online
+  doi: "10.1080/00031305.2026.2709494"
+  url: "https://doi.org/10.1080/00031305.2026.2709494"
+  authors:
+    - family-names: "Yüzbaşı"
+      given-names: "Bahadır"
+      orcid: "https://orcid.org/0000-0002-6196-3201"
+    - family-names: "Cao"
+      given-names: "Jiguo"
+      orcid: "https://orcid.org/0000-0001-7417-6330"

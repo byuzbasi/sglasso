@@ -1,0 +1,63 @@
+#' CoRSIVSZ: grouped methylation measurements for schizophrenia classification
+#'
+#' @description
+#' A processed analysis panel derived from public blood DNA methylation cohorts
+#' GSE84727 and GSE80417 and the published CoRSIV/ESS/SIV cluster annotation.
+#' \code{CoRSIVSZ} names this derived panel, not a newly collected dataset or
+#' an exact reproduction of the original publication's 1,982-region panel.
+#' The full RDS file is distributed separately, not under package \code{data/}.
+#' Use \code{\link{load_CoRSIVSZ}}; \code{data(CoRSIVSZ)} is not supported.
+#'
+#' @format A list of class \code{CoRSIVSZ} with:
+#' \describe{
+#'   \item{schema_version}{The string \code{CoRSIVSZ_v1}.}
+#'   \item{development}{A list with \code{X} (847 by 1,107 matrix), \code{y}
+#'     (integer response), \code{sample_id} (public array identifiers) and
+#'     \code{geo_sample_id} (GSM accessions). There are 414 cases and 433 controls.}
+#'   \item{external}{The same fields for 675 independent-test participants:
+#'     353 cases and 322 controls.}
+#'   \item{group}{Integer group membership for the 1,107 columns, from 1 to 409.}
+#'   \item{group_name}{The 409 original annotation cluster labels.}
+#'   \item{probe_id}{The 1,107 CpG identifiers, in matrix-column order.}
+#'   \item{preprocessing}{An explicit description of panel construction and
+#'     the unchanged deposited measurements.}
+#'   \item{provenance}{Public accessions, source links and checksums.}
+#' }
+#' @details
+#' The outcome is the deposited diagnosis: \code{0} denotes a control and
+#' \code{1} a schizophrenia case, corresponding to original GEO codes 1 and 2.
+#' It is not a dichotomized gene-expression outcome. The independent cohorts
+#' are not a random split, and their case-control proportions are not population
+#' prevalence estimates.
+#'
+#' Of 2,409 annotation-defined groups, retain only groups having at least two
+#' original probes and every member measured in both cohorts. Incomplete groups
+#' are excluded whole. This produces 409 groups with sizes 2--12. No participants
+#' are removed. Columns are ordered by radix-sorted group names, then probe IDs.
+#' No response association, performance or correlation cutoff selects groups.
+#' There is no imputation, probe averaging, merging or extra smoking-probe filter.
+#'
+#' Deposited cohort-level pfilter/dasen-normalized methylation values are
+#' unchanged. No additional scaling or covariate adjustment is applied here.
+#' Model-specific transformations and targets must be estimated only within
+#' training partitions. Public IDs establish common measurement availability,
+#' not external-outcome-driven feature selection.
+#'
+#' Package metadata pins the exact release file size and SHA-256 digest.
+#' The complete file is approximately 11 MiB after compression and is excluded
+#' from the package tarball. Package examples never download data automatically.
+#' See the installed \code{CoRSIVSZ-NOTICE.txt} for source attribution and terms.
+#' @source
+#' \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE84727}
+#'
+#' \url{https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE80417}
+#'
+#' Annotation: \url{https://github.com/waterlandlab/CoRSIV-Methylation-based-SZ-Risk-Score}
+#' @references
+#' Gunasekara CJ, Hannon E, MacKay H, et al. (2021).
+#' A machine learning case-control classifier for schizophrenia based on DNA
+#' methylation in blood. Translational Psychiatry, 11, 412.
+#' \doi{10.1038/s41398-021-01496-3}.
+#' @seealso \code{\link{load_CoRSIVSZ}}, \code{\link{download_CoRSIVSZ}}
+#' @name CoRSIVSZ
+NULL

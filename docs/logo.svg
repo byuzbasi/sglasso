@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">sglasso logo</title>
+  <desc id="desc">Three colored predictor groups bend toward a shared target inside a dark hexagon. An illustrative mark, not data.</desc>
+  <path d="M120 8 216 64v112l-96 56-96-56V64Z" fill="#132D46"/>
+  <path d="M120 17 208 68v104l-88 51-88-51V68Z" fill="none" stroke="#3C586E"/>
+  <g fill="none" stroke-linecap="round" stroke-width="8">
+    <path d="M59 81c41-27 45 70 115 49" stroke="#54D6C1"/>
+    <path d="M59 108c48-30 45 42 115 22" stroke="#A9B7FF"/>
+    <path d="M59 137c39 20 57 7 115-7" stroke="#F2C078"/>
+  </g>
+  <circle cx="177" cy="130" r="10" fill="#FCFDFF"/>
+  <text x="120" y="191" text-anchor="middle" fill="#FCFDFF" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="23" letter-spacing="2">sglasso</text>
+</svg>

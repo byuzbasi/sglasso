@@ -2,10 +2,13 @@ bibentry(
   bibtype = "Article",
   title = "Collinear Groupwise Selection via Scaled Group Lasso",
   author = c(
-    person("Bahadir", "Yuzbasi"),
+    person("Bahadır", "Yüzbaşı"),
     person("Jiguo", "Cao")
   ),
   journal = "The American Statistician",
   year = "2026",
-  doi = "10.1080/00031305.2026.2709494"
+  pages = "1--23",
+  doi = "10.1080/00031305.2026.2709494",
+  url = "https://doi.org/10.1080/00031305.2026.2709494",
+  note = "Advance online publication, 17 September 2026."
 )

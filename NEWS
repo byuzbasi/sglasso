@@ -1,5 +1,8 @@
 sglasso 1.2.0 (development)
 
+* Add CoRSIVSZ metadata and explicit, checksum-verified local loading and
+  HTTPS downloading. The full processed dataset is distributed separately;
+  it is not included in the package tarball or fetched by package examples.
 * Add family="binomial" using the validated accelerated RcppArmadillo
   IRLS/proximal-Newton, block and APG core, compiled at package installation.
 * Add training-only groupwise Firth targets and fold-local log-loss CV.

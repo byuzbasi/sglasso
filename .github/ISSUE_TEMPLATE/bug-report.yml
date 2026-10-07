@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible package or documentation problem.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Use a small synthetic example. Do not include private data, patient identifiers, credentials or identifying local paths."
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Gaussian fitting, Binomial fitting, Cross-validation or prediction, Installation, Documentation, Research run code]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Include seed, group definition, tuning grid and a short synthetic example.
+      render: r
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Include the exact warning/error and relevant numerical diagnostics.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: R version, operating system and package versions. Remove identifying paths from logs.
+      placeholder: "R.version.string; packageVersion('sglasso'); packageVersion('RcppArmadillo')"
+    validations:
+      required: true

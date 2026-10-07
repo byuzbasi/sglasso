@@ -1,0 +1,11 @@
+list(simulation = list(r_version = "R version 4.3.0 (2023-04-21)", 
+    platform = "x86_64-pc-linux-gnu", package_versions = c(Rcpp = "1.1.1.1.1", 
+    RcppArmadillo = "15.2.6.1", digest = "0.6.35", adelie = "1.0.9", 
+    grpreg = "3.6.0", logistf = "1.26.1", mltools = "0.3.5", 
+    jsonlite = "2.0.0"), rng_kind = c("Mersenne-Twister", "Inversion", 
+    "Rejection")), external = list(R = "R version 4.6.0 (2026-04-24)", 
+    platform = "aarch64-apple-darwin23", rng_kind = c("Mersenne-Twister", 
+    "Inversion", "Rejection"), packages = c(Rcpp = "1.1.1.1.1", 
+    RcppArmadillo = "15.2.7.1", digest = "0.6.39", adelie = "1.0.9", 
+    grpreg = "3.6.0", logistf = "1.26.1", mltools = "0.3.5", 
+    jsonlite = "2.0.0")))
