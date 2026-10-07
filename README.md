@@ -17,6 +17,19 @@ of correlations among groups. The package accompanies the article
 [“Collinear Groupwise Selection via Scaled Group Lasso”](https://doi.org/10.1080/00031305.2026.2709494),
 published in *The American Statistician*.
 
+## Package source and article-specific code
+
+The `sglasso` package is a general-purpose implementation for grouped regression;
+its reusable R and compiled source code is in `R/` and `src/`.
+The [`paper_codes/`](paper_codes/) directory contains the real-data analyses,
+simulations and computational experiments accompanying **Yüzbaşı and Cao (2026),
+*Collinear Groupwise Selection via Scaled Group Lasso*, The American Statistician**
+([article](https://doi.org/10.1080/00031305.2026.2709494)).
+Those scripts use the general package but retain that article's specific study
+settings. They are not the reproduction scripts for the separate
+*Logistic SGLASSO: Prediction with Correlated Predictor Groups* manuscript.
+
+
 ## Installation
 
 You can install the development version of sglasso like so:

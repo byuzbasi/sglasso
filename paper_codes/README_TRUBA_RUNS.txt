@@ -1,6 +1,17 @@
 TRUBA ALL RUNS
 ==============
 
+ARTICLE-SPECIFIC REPRODUCTION CODE
+---------------------------------
+This directory accompanies:
+Yuzbasi, B. and Cao, J. (2026). Collinear Groupwise Selection via
+Scaled Group Lasso. The American Statistician.
+https://doi.org/10.1080/00031305.2026.2709494
+
+The reusable sglasso package source is in the repository-level R/ and src/
+directories. The scripts here retain the settings of the article above;
+they do not reproduce the separate Logistic SGLASSO manuscript.
+
 Bu dosya, hakem revizyonu icin gercek veri, ana simulasyon,
 tuning sensitivity ve scalability kosularini TRUBA'da ayni proje
 klasoru altinda calistirmak icin hazirlandi.
