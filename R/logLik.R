@@ -7,6 +7,10 @@
 #'
 #' @export
 logLik.sglasso <- function(object, ...) {
+  if (identical(object$family, "binomial")) {
+    return(structure(-object$deviance / 2, df = object$df,
+      nobs = object$n, class = "logLik"))
+  }
   n <- as.integer(object$n)
   df <- object$df
   RSS <- object$deviance

@@ -1,14 +1,17 @@
 #' @title Fit a scaled group lasso regression path
 #' 
 #' @description 
-#' Computes a scaled group lasso regularized linear models. 
+#' Computes scaled group lasso paths for Gaussian or binary responses.
 #' 
 #' 
 #' @param X The design matrix, without an intercept.  \code{sglasso}
 #' standardizes the data and includes an intercept by default.
 #' @param Y The response vector.
 #' @param group A vector describing the grouping of the coefficients.
-#' @param family is "gaussian", not other option at this moment, depending on the response.
+#' @param family Either \code{"gaussian"} (default) or \code{"binomial"}.
+#' Binomial responses must be numeric/logical 0/1 with both classes present.
+#' @param binomial.control Named list of numerical controls for the binomial
+#' solver; see \code{\link{sglasso-binomial}}. Ignored for Gaussian fits.
 #' @param bilevel bi-level selection is not supported at this moment.
 #' @param nlambda The number of \code{lambda} values.  Default is 50
 #' @param lambda A user supplied sequence of \code{lambda} values.  Typically,
@@ -19,7 +22,9 @@
 #' @param d The scale parameter between 0 and 1.
 #' @param alpha Elastic Net tuning constant: the value must be between 0 and 1. Default is 0.5.
 #' @param lambda.min.ratio The smallest value for \code{lambda}, as a fraction of
-#' \code{lambda.max}.  Default is .0005.
+#' the starting reference. Default is .005. For binomial models this is a
+#' finite search range, not a guarantee of a null model; see
+#' \code{\link{sglasso-binomial}}.
 #' @param beta_start Optional initial coefficient vector.
 #' @param standardize Logical flag indicating whether \code{X} should be
 #' centered and scaled internally before fitting.  The default is \code{TRUE},
@@ -99,7 +104,17 @@ sglasso <- function(X ,Y, group=1:ncol(X),
                     profile = FALSE,
                     transform = c("eager", "lazy"),
                     lambda.min.ratio = 0.005,
-                    dfmax=p, gmax=length(unique(group))){
+                    dfmax=p, gmax=length(unique(group)), binomial.control = NULL){
+  family <- match.arg(family, c("gaussian", "binomial"))
+  if (family == "binomial") {
+    .sg_binomial_options(standardize, bilevel, beta_start, screen[1L], transform[1L])
+    if (!missing(dfmax) || !missing(gmax)) stop("dfmax/gmax stopping is Gaussian-only.", call. = FALSE)
+    return(.sg_binomial_fit(X, Y, group, if (missing(lambda)) NULL else lambda,
+      nlambda, if (missing(d)) NULL else d, nd, alpha, max_iter,
+      if (missing(eps)) 1e-10 else eps, binomial.control,
+      if (missing(lambda)) .sg_binomial_grid(nlambda, lambda.min.ratio) else NULL,
+      use_active_set = screen[1L] != "none"))
+  }
   ###
   ##############################################################################
   screen <- screen[1L]

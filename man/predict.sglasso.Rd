@@ -7,7 +7,7 @@
 \method{predict}{sglasso}(
   object,
   newx = NULL,
-  type = c("response", "coefficients", "vars", "groups"),
+  type = c("response", "coefficients", "vars", "groups", "link"),
   lambda,
   d,
   s = c("ALL", "opt"),
@@ -22,7 +22,9 @@
 
 \item{newx}{New design matrix.}
 
-\item{type}{Prediction type.}
+\item{type}{Prediction type. For binomial objects, \code{"response"}
+returns probabilities of Y=1 and \code{"link"} returns log odds. For Gaussian
+objects both return the linear predictor. No classification threshold is fitted.}
 
 \item{lambda}{Lambda values.}
 

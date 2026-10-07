@@ -8,16 +8,6 @@ transform_sglasso_betas(object)
 }
 \arguments{
 \item{object}{A fitted \code{sglasso} object.}
-
-\item{lambda}{Lambda values for coefficient extraction.}
-
-\item{d}{Scaling parameter values.}
-
-\item{which}{Indices of lambda values.}
-
-\item{drop}{Logical; should singleton dimensions be dropped?}
-
-\item{...}{Additional arguments for compatibility.}
 }
 \value{
 Estimated coefficient array or matrix.

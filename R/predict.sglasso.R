@@ -2,7 +2,9 @@
 #'
 #' @param object Fitted sglasso object.
 #' @param newx New design matrix.
-#' @param type Prediction type.
+#' @param type Prediction type. For binomial objects, \code{"response"}
+#' returns probabilities of Y=1 and \code{"link"} returns log odds. For Gaussian
+#' objects both return the linear predictor. No classification threshold is fitted.
 #' @param lambda Lambda values.
 #' @param d Scaling parameter values.
 #' @param s Selection mode.
@@ -15,7 +17,7 @@
 predict.sglasso <- function(
     object,
     newx = NULL,
-    type = c("response", "coefficients", "vars", "groups"),
+    type = c("response", "coefficients", "vars", "groups", "link"),
     lambda,
     d,
     s = c("ALL", "opt"),
@@ -27,6 +29,25 @@ predict.sglasso <- function(
   
   type <- match.arg(type)
   s <- match.arg(s)
+  if (identical(object$family, "binomial") && type %in% c("response", "link")) {
+    if (is.null(newx)) stop("newx is required for response/link prediction.", call. = FALSE)
+    newx <- as.matrix(newx)
+    .sg_assert(is.numeric(newx) && ncol(newx) == length(object$group) &&
+      all(is.finite(newx)), "newx must be finite with the original predictor columns in training order.")
+    if (s == "opt") {
+      .sg_assert(!is.null(opt_beta) && length(opt_beta) == ncol(newx) + 1L,
+        "opt_beta is required when s='opt'.")
+      ans <- as.numeric(cbind(1, newx) %*% opt_beta)
+    } else {
+      b <- coef(object, lambda = if (missing(lambda)) object$lambda[which] else lambda,
+        d = if (missing(d)) object$d else d, drop = FALSE)
+      ans <- array(cbind(1, newx) %*% matrix(b, nrow = dim(b)[1L]),
+        c(nrow(newx), dim(b)[2:3]))
+    }
+    if (type == "response") ans <- stats::plogis(ans)
+    return(if (drop) drop(ans) else ans)
+  }
+  if (type == "link") type <- "response"
   
   if (missing(lambda)) lambda <- object$lambda
   if (missing(d)) d <- object$d

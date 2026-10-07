@@ -17,3 +17,15 @@ gd_sglasso_ssr <- function(Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, 
     .Call(`_sglasso_gd_sglasso_ssr`, Xtilde, Ytilde, lambda, lambda_max, d, alpha, K, K1, K0, gm, beta_start, max_iter, eps, dfmax, gmax, screen_rule, diagnostics)
 }
 
+lsg_shifted_group_prox_v11_cpp <- function(point, gradient, group_start, group_end, group_weight, target, lambda, alpha, d, curvature) {
+    .Call(`_sglasso_lsg_shifted_group_prox_v11_cpp`, point, gradient, group_start, group_end, group_weight, target, lambda, alpha, d, curvature)
+}
+
+lsg_fit_one_hybrid_v11_cpp <- function(X, y, group_start, group_end, group_weight, target, lambda, alpha, d, beta_initial, intercept_initial, block_max_sweeps = 4000L, block_chunk_sweeps = 100L, block_stall_window = 200L, block_stall_relative_improvement = 0.01, apg_max_iterations = 10000L, apg_kkt_check_interval = 5L, kkt_tolerance = 2e-6, update_tolerance = 1e-10, intercept_tolerance = 1e-12, max_intercept_iterations = 100L, use_active_set = TRUE, enable_fallback = TRUE, keep_trace = FALSE, reuse_apg_offsets = FALSE, use_irls = FALSE, irls_max_outer = 50L, irls_max_inner = 2000L) {
+    .Call(`_sglasso_lsg_fit_one_hybrid_v11_cpp`, X, y, group_start, group_end, group_weight, target, lambda, alpha, d, beta_initial, intercept_initial, block_max_sweeps, block_chunk_sweeps, block_stall_window, block_stall_relative_improvement, apg_max_iterations, apg_kkt_check_interval, kkt_tolerance, update_tolerance, intercept_tolerance, max_intercept_iterations, use_active_set, enable_fallback, keep_trace, reuse_apg_offsets, use_irls, irls_max_outer, irls_max_inner)
+}
+
+lsg_path_hybrid_v11_cpp <- function(X, y, group_start, group_end, group_weight, target, lambda, d, alpha, block_max_sweeps = 4000L, block_chunk_sweeps = 100L, block_stall_window = 200L, block_stall_relative_improvement = 0.01, apg_max_iterations = 10000L, apg_kkt_check_interval = 5L, kkt_tolerance = 2e-6, update_tolerance = 1e-10, intercept_tolerance = 1e-12, max_intercept_iterations = 100L, use_active_set = TRUE, enable_fallback = TRUE, warm_start_d = TRUE, keep_traces = FALSE, early_exit_deviance_fraction = -1.0, reuse_apg_offsets = FALSE, use_irls = FALSE, irls_max_outer = 50L, irls_max_inner = 2000L) {
+    .Call(`_sglasso_lsg_path_hybrid_v11_cpp`, X, y, group_start, group_end, group_weight, target, lambda, d, alpha, block_max_sweeps, block_chunk_sweeps, block_stall_window, block_stall_relative_improvement, apg_max_iterations, apg_kkt_check_interval, kkt_tolerance, update_tolerance, intercept_tolerance, max_intercept_iterations, use_active_set, enable_fallback, warm_start_d, keep_traces, early_exit_deviance_fraction, reuse_apg_offsets, use_irls, irls_max_outer, irls_max_inner)
+}
+

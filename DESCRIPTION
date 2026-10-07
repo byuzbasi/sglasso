@@ -1,11 +1,15 @@
 Package: sglasso
 Type: Package
 Title: Scaled Group Lasso
-Version: 1.1.14
-Date: 2026-07-26
+Version: 1.2.0
+Date: 2026-10-07
 Author: Bahadir Yuzbasi and Jiguo Cao
 Maintainer: Bahadir Yuzbasi <b.yzb@hotmail.com>
-Description: Implements the Scaled Group Lasso method for grouped variable selection in regression models with groupwise collinearity.
+Description: Implements the Scaled Group Lasso method for grouped regression
+    with groupwise collinearity. Gaussian and binomial response families are
+    supported. Binomial models use training-only groupwise Firth targets and
+    an accelerated hybrid RcppArmadillo solver, with fold-local preprocessing
+    and log-loss cross-validation.
 License: GPL (>= 3)
 Encoding: UTF-8
 Depends:

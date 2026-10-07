@@ -1,0 +1,19 @@
+Component: accelerated-binomial-core
+Research-source: logistic_prework/src/logistic_sglasso_hybrid_solver_local_apg_v4.cpp
+Research-SHA256: 346e99d34a890beb1769ec794f39b29cbbc1c8f23d7a6210cdd867f8ed7e5bdb
+Package-source: src/binomial_solver.cpp
+Adaptation: include path changed to binomial_block_kernel.h; numerical body unchanged
+Runtime-flags: reuse_apg_offsets=TRUE; use_irls=TRUE; early_exit disabled
+Evidence: corsiv_sz_external_v1/specification.rds source_inventory
+
+Component: block-kernel
+Research-source: logistic_prework/src/logistic_sglasso_block_kernel_local_v3.hpp
+Research-SHA256: d67180f55b62c9fcbe1653a865bdd75c068d89ae65ea401611610a3492195f10
+Package-source: src/binomial_block_kernel.h
+Adaptation: byte-identical snapshot
+
+Component: Firth-target
+Research-source: logistic_prework/R/genathum_binary_firth_v3.R
+Research-SHA256: f15aaa4e5b2ee400031eea09ba8f8fe8eb152a1ff6dd64ce16248d4ee7efea4a
+Package-source: R/binomial_preprocess.R
+Adaptation: evaluate/fit functions renamed internally; target orchestration in R/binomial.R

@@ -1,0 +1,12 @@
+sglasso 1.2.0 (development)
+
+* Add family="binomial" using the validated accelerated RcppArmadillo
+  IRLS/proximal-Newton, block and APG core, compiled at package installation.
+* Add training-only groupwise Firth targets and fold-local log-loss CV.
+* Add binomial probability/link prediction, numerical diagnostics and strict
+  nonconvergence errors. Finite-grid endpoint selections are reported, not
+  misrepresented as convergence failures or global tuning optima.
+* Preserve the Gaussian numerical path and default API behavior.
+* Binomial information-criterion selection, nonstandardized fitting, lazy
+  transformation and SSR_fast are intentionally unsupported (explicit errors).
+* Use portable BLAS/LAPACK/Fortran linking settings instead of machine paths.

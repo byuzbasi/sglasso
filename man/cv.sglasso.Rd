@@ -48,7 +48,7 @@ cv.sglasso(
 
 \item{beta_start}{Optional initial coefficient vector.}
 
-\item{family}{Model family. Currently "gaussian".}
+\item{family}{Model family: \code{"gaussian"} or \code{"binomial"}.}
 
 \item{bilevel}{Logical; whether bilevel selection is used.}
 
@@ -61,7 +61,8 @@ centered and scaled internally before fitting.}
 
 \item{screen}{Screening rule passed to \code{\link{sglasso}}.}
 
-\item{...}{Additional arguments.}
+\item{...}{For binomial fits: \code{lambda.min.ratio} and
+\code{binomial.control}, passed to the numerical adapter.}
 }
 \value{
 An object of class \code{cv.sglasso}.
@@ -69,6 +70,16 @@ An object of class \code{cv.sglasso}.
 \description{
 Performs K-fold cross-validation for the scaled group lasso over a grid of
 lambda and d values.
+}
+\details{
+Binomial CV minimizes mean out-of-fold log-loss, using raw training
+rows to recompute standardization, group orthonormalization and Firth targets
+separately in every fold. Automatic paths align by a common relative grid
+with fold-specific training-only reference scales; explicit \code{lambda}
+aligns by absolute values. \code{alpha} is a fixed scalar, not tuned by this
+function. Use the same supplied folds for comparisons across alpha values.
+The test set must not be supplied to this function. See
+\code{\link{sglasso-binomial}} for finite-range and numerical limitations.
 }
 \examples{
 data(Birthwt, package = "grpreg")

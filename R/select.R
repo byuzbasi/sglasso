@@ -26,6 +26,9 @@ select.sglasso <- function(obj,
                            ebic_level = c("group", "feature"),
                            tol = 1e-8,
                            ...) {
+  if (identical(obj$family, "binomial")) {
+    stop("Use cv.sglasso(family='binomial') for log-loss selection; effective degrees of freedom for binomial information criteria are not implemented.", call. = FALSE)
+  }
   
   criterion <- match.arg(criterion)
   ebic_level <- match.arg(ebic_level)

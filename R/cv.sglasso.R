@@ -15,14 +15,23 @@
 #' @param nfolds Number of cross-validation folds.
 #' @param fold Optional fold assignment vector.
 #' @param beta_start Optional initial coefficient vector.
-#' @param family Model family. Currently "gaussian".
+#' @param family Model family: \code{"gaussian"} or \code{"binomial"}.
 #' @param bilevel Logical; whether bilevel selection is used.
 #' @param max_iter Maximum number of iterations.
 #' @param eps Convergence tolerance.
 #' @param standardize Logical flag indicating whether \code{X} should be
 #' centered and scaled internally before fitting.
 #' @param screen Screening rule passed to \code{\link{sglasso}}.
-#' @param ... Additional arguments.
+#' @param ... For binomial fits: \code{lambda.min.ratio} and
+#' \code{binomial.control}, passed to the numerical adapter.
+#' @details Binomial CV minimizes mean out-of-fold log-loss, using raw training
+#' rows to recompute standardization, group orthonormalization and Firth targets
+#' separately in every fold. Automatic paths align by a common relative grid
+#' with fold-specific training-only reference scales; explicit \code{lambda}
+#' aligns by absolute values. \code{alpha} is a fixed scalar, not tuned by this
+#' function. Use the same supplied folds for comparisons across alpha values.
+#' The test set must not be supplied to this function. See
+#' \code{\link{sglasso-binomial}} for finite-range and numerical limitations.
 #'
 #' @return An object of class \code{cv.sglasso}.
 #'
@@ -56,6 +65,14 @@ cv.sglasso <- function(
     screen = c("SSR", "none", "SSR_fast"),
     ...
 ) {
+  family <- match.arg(family, c("gaussian", "binomial"))
+  if (family == "binomial") {
+    .sg_binomial_options(standardize, bilevel, beta_start, screen[1L], "eager")
+    return(.sg_cv_binomial(X, Y, group, if (missing(lambda)) NULL else lambda,
+      nlambda, if (missing(d)) NULL else d, nd, alpha,
+      if (missing(fold)) NULL else fold, nfolds, max_iter,
+      if (missing(eps)) 1e-10 else eps, list(...), screen[1L]))
+  }
   screen <- screen[1L]
   screen <- match.arg(screen, choices = c("SSR", "none", "SSR_fast"))
   

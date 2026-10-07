@@ -1,11 +1,6 @@
 #' Extract coefficients from a fitted sglasso object
 #'
 #' @param object A fitted \code{sglasso} object.
-#' @param lambda Lambda values for coefficient extraction.
-#' @param d Scaling parameter values.
-#' @param which Indices of lambda values.
-#' @param drop Logical; should singleton dimensions be dropped?
-#' @param ... Additional arguments for compatibility.
 #'
 #' @return Estimated coefficient array or matrix.
 #'

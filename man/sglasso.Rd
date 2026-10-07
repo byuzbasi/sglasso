@@ -25,7 +25,8 @@ sglasso(
   transform = c("eager", "lazy"),
   lambda.min.ratio = 0.005,
   dfmax = p,
-  gmax = length(unique(group))
+  gmax = length(unique(group)),
+  binomial.control = NULL
 )
 }
 \arguments{
@@ -51,7 +52,8 @@ of lambda values.}
 
 \item{beta_start}{Optional initial coefficient vector.}
 
-\item{family}{is "gaussian", not other option at this moment, depending on the response.}
+\item{family}{Either \code{"gaussian"} (default) or \code{"binomial"}.
+Binomial responses must be numeric/logical 0/1 with both classes present.}
 
 \item{bilevel}{bi-level selection is not supported at this moment.}
 
@@ -88,7 +90,9 @@ solver-scale path and performs the back-transformation when \code{coef()} is
 called, which can reduce fit-time overhead in runtime comparisons.}
 
 \item{lambda.min.ratio}{The smallest value for \code{lambda}, as a fraction of
-\code{lambda.max}.  Default is .0005.}
+the starting reference. Default is .005. For binomial models this is a
+finite search range, not a guarantee of a null model; see
+\code{\link{sglasso-binomial}}.}
 
 \item{dfmax}{Limit on the number of parameters allowed to be nonzero.  If
 this limit is exceeded, the algorithm will exit early from the
@@ -97,6 +101,9 @@ regularization path.}
 \item{gmax}{Limit on the number of groups allowed to have nonzero elements.
 If this limit is exceeded, the algorithm will exit early from the
 regularization path.}
+
+\item{binomial.control}{Named list of numerical controls for the binomial
+solver; see \code{\link{sglasso-binomial}}. Ignored for Gaussian fits.}
 }
 \value{
 An object with S3 class \code{"sglasso"} containing:
@@ -117,7 +124,7 @@ to the number of coefficients, and the number of columns is equal to
 }
 }
 \description{
-Computes a scaled group lasso regularized linear models.
+Computes scaled group lasso paths for Gaussian or binary responses.
 }
 \examples{
 data(GenAtHum,package = "sglasso")

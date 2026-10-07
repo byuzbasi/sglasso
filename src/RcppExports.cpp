@@ -75,12 +75,111 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lsg_shifted_group_prox_v11_cpp
+arma::vec lsg_shifted_group_prox_v11_cpp(const arma::vec& point, const arma::vec& gradient, const arma::uvec& group_start, const arma::uvec& group_end, const arma::vec& group_weight, const arma::vec& target, const double lambda, const double alpha, const double d, const double curvature);
+RcppExport SEXP _sglasso_lsg_shifted_group_prox_v11_cpp(SEXP pointSEXP, SEXP gradientSEXP, SEXP group_startSEXP, SEXP group_endSEXP, SEXP group_weightSEXP, SEXP targetSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP dSEXP, SEXP curvatureSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type point(pointSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type gradient(gradientSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group_start(group_startSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group_end(group_endSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type group_weight(group_weightSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const double >::type curvature(curvatureSEXP);
+    rcpp_result_gen = Rcpp::wrap(lsg_shifted_group_prox_v11_cpp(point, gradient, group_start, group_end, group_weight, target, lambda, alpha, d, curvature));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lsg_fit_one_hybrid_v11_cpp
+Rcpp::List lsg_fit_one_hybrid_v11_cpp(const arma::mat& X, const arma::vec& y, const arma::uvec& group_start, const arma::uvec& group_end, const arma::vec& group_weight, const arma::vec& target, const double lambda, const double alpha, const double d, const arma::vec& beta_initial, const double intercept_initial, const int block_max_sweeps, const int block_chunk_sweeps, const int block_stall_window, const double block_stall_relative_improvement, const int apg_max_iterations, const int apg_kkt_check_interval, const double kkt_tolerance, const double update_tolerance, const double intercept_tolerance, const int max_intercept_iterations, const bool use_active_set, const bool enable_fallback, const bool keep_trace, const bool reuse_apg_offsets, const bool use_irls, const int irls_max_outer, const int irls_max_inner);
+RcppExport SEXP _sglasso_lsg_fit_one_hybrid_v11_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_endSEXP, SEXP group_weightSEXP, SEXP targetSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP dSEXP, SEXP beta_initialSEXP, SEXP intercept_initialSEXP, SEXP block_max_sweepsSEXP, SEXP block_chunk_sweepsSEXP, SEXP block_stall_windowSEXP, SEXP block_stall_relative_improvementSEXP, SEXP apg_max_iterationsSEXP, SEXP apg_kkt_check_intervalSEXP, SEXP kkt_toleranceSEXP, SEXP update_toleranceSEXP, SEXP intercept_toleranceSEXP, SEXP max_intercept_iterationsSEXP, SEXP use_active_setSEXP, SEXP enable_fallbackSEXP, SEXP keep_traceSEXP, SEXP reuse_apg_offsetsSEXP, SEXP use_irlsSEXP, SEXP irls_max_outerSEXP, SEXP irls_max_innerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group_start(group_startSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group_end(group_endSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type group_weight(group_weightSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type beta_initial(beta_initialSEXP);
+    Rcpp::traits::input_parameter< const double >::type intercept_initial(intercept_initialSEXP);
+    Rcpp::traits::input_parameter< const int >::type block_max_sweeps(block_max_sweepsSEXP);
+    Rcpp::traits::input_parameter< const int >::type block_chunk_sweeps(block_chunk_sweepsSEXP);
+    Rcpp::traits::input_parameter< const int >::type block_stall_window(block_stall_windowSEXP);
+    Rcpp::traits::input_parameter< const double >::type block_stall_relative_improvement(block_stall_relative_improvementSEXP);
+    Rcpp::traits::input_parameter< const int >::type apg_max_iterations(apg_max_iterationsSEXP);
+    Rcpp::traits::input_parameter< const int >::type apg_kkt_check_interval(apg_kkt_check_intervalSEXP);
+    Rcpp::traits::input_parameter< const double >::type kkt_tolerance(kkt_toleranceSEXP);
+    Rcpp::traits::input_parameter< const double >::type update_tolerance(update_toleranceSEXP);
+    Rcpp::traits::input_parameter< const double >::type intercept_tolerance(intercept_toleranceSEXP);
+    Rcpp::traits::input_parameter< const int >::type max_intercept_iterations(max_intercept_iterationsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_active_set(use_active_setSEXP);
+    Rcpp::traits::input_parameter< const bool >::type enable_fallback(enable_fallbackSEXP);
+    Rcpp::traits::input_parameter< const bool >::type keep_trace(keep_traceSEXP);
+    Rcpp::traits::input_parameter< const bool >::type reuse_apg_offsets(reuse_apg_offsetsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_irls(use_irlsSEXP);
+    Rcpp::traits::input_parameter< const int >::type irls_max_outer(irls_max_outerSEXP);
+    Rcpp::traits::input_parameter< const int >::type irls_max_inner(irls_max_innerSEXP);
+    rcpp_result_gen = Rcpp::wrap(lsg_fit_one_hybrid_v11_cpp(X, y, group_start, group_end, group_weight, target, lambda, alpha, d, beta_initial, intercept_initial, block_max_sweeps, block_chunk_sweeps, block_stall_window, block_stall_relative_improvement, apg_max_iterations, apg_kkt_check_interval, kkt_tolerance, update_tolerance, intercept_tolerance, max_intercept_iterations, use_active_set, enable_fallback, keep_trace, reuse_apg_offsets, use_irls, irls_max_outer, irls_max_inner));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lsg_path_hybrid_v11_cpp
+Rcpp::List lsg_path_hybrid_v11_cpp(const arma::mat& X, const arma::vec& y, const arma::uvec& group_start, const arma::uvec& group_end, const arma::vec& group_weight, const arma::vec& target, const arma::vec& lambda, const arma::vec& d, const double alpha, const int block_max_sweeps, const int block_chunk_sweeps, const int block_stall_window, const double block_stall_relative_improvement, const int apg_max_iterations, const int apg_kkt_check_interval, const double kkt_tolerance, const double update_tolerance, const double intercept_tolerance, const int max_intercept_iterations, const bool use_active_set, const bool enable_fallback, const bool warm_start_d, const bool keep_traces, const double early_exit_deviance_fraction, const bool reuse_apg_offsets, const bool use_irls, const int irls_max_outer, const int irls_max_inner);
+RcppExport SEXP _sglasso_lsg_path_hybrid_v11_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_startSEXP, SEXP group_endSEXP, SEXP group_weightSEXP, SEXP targetSEXP, SEXP lambdaSEXP, SEXP dSEXP, SEXP alphaSEXP, SEXP block_max_sweepsSEXP, SEXP block_chunk_sweepsSEXP, SEXP block_stall_windowSEXP, SEXP block_stall_relative_improvementSEXP, SEXP apg_max_iterationsSEXP, SEXP apg_kkt_check_intervalSEXP, SEXP kkt_toleranceSEXP, SEXP update_toleranceSEXP, SEXP intercept_toleranceSEXP, SEXP max_intercept_iterationsSEXP, SEXP use_active_setSEXP, SEXP enable_fallbackSEXP, SEXP warm_start_dSEXP, SEXP keep_tracesSEXP, SEXP early_exit_deviance_fractionSEXP, SEXP reuse_apg_offsetsSEXP, SEXP use_irlsSEXP, SEXP irls_max_outerSEXP, SEXP irls_max_innerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group_start(group_startSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type group_end(group_endSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type group_weight(group_weightSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const int >::type block_max_sweeps(block_max_sweepsSEXP);
+    Rcpp::traits::input_parameter< const int >::type block_chunk_sweeps(block_chunk_sweepsSEXP);
+    Rcpp::traits::input_parameter< const int >::type block_stall_window(block_stall_windowSEXP);
+    Rcpp::traits::input_parameter< const double >::type block_stall_relative_improvement(block_stall_relative_improvementSEXP);
+    Rcpp::traits::input_parameter< const int >::type apg_max_iterations(apg_max_iterationsSEXP);
+    Rcpp::traits::input_parameter< const int >::type apg_kkt_check_interval(apg_kkt_check_intervalSEXP);
+    Rcpp::traits::input_parameter< const double >::type kkt_tolerance(kkt_toleranceSEXP);
+    Rcpp::traits::input_parameter< const double >::type update_tolerance(update_toleranceSEXP);
+    Rcpp::traits::input_parameter< const double >::type intercept_tolerance(intercept_toleranceSEXP);
+    Rcpp::traits::input_parameter< const int >::type max_intercept_iterations(max_intercept_iterationsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_active_set(use_active_setSEXP);
+    Rcpp::traits::input_parameter< const bool >::type enable_fallback(enable_fallbackSEXP);
+    Rcpp::traits::input_parameter< const bool >::type warm_start_d(warm_start_dSEXP);
+    Rcpp::traits::input_parameter< const bool >::type keep_traces(keep_tracesSEXP);
+    Rcpp::traits::input_parameter< const double >::type early_exit_deviance_fraction(early_exit_deviance_fractionSEXP);
+    Rcpp::traits::input_parameter< const bool >::type reuse_apg_offsets(reuse_apg_offsetsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_irls(use_irlsSEXP);
+    Rcpp::traits::input_parameter< const int >::type irls_max_outer(irls_max_outerSEXP);
+    Rcpp::traits::input_parameter< const int >::type irls_max_inner(irls_max_innerSEXP);
+    rcpp_result_gen = Rcpp::wrap(lsg_path_hybrid_v11_cpp(X, y, group_start, group_end, group_weight, target, lambda, d, alpha, block_max_sweeps, block_chunk_sweeps, block_stall_window, block_stall_relative_improvement, apg_max_iterations, apg_kkt_check_interval, kkt_tolerance, update_tolerance, intercept_tolerance, max_intercept_iterations, use_active_set, enable_fallback, warm_start_d, keep_traces, early_exit_deviance_fraction, reuse_apg_offsets, use_irls, irls_max_outer, irls_max_inner));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sglasso_std_c", (DL_FUNC) &_sglasso_std_c, 1},
     {"_sglasso_orthogonalize_c", (DL_FUNC) &_sglasso_orthogonalize_c, 2},
     {"_sglasso_lambda_max_c", (DL_FUNC) &_sglasso_lambda_max_c, 4},
     {"_sglasso_gd_sglasso_ssr", (DL_FUNC) &_sglasso_gd_sglasso_ssr, 17},
+    {"_sglasso_lsg_shifted_group_prox_v11_cpp", (DL_FUNC) &_sglasso_lsg_shifted_group_prox_v11_cpp, 10},
+    {"_sglasso_lsg_fit_one_hybrid_v11_cpp", (DL_FUNC) &_sglasso_lsg_fit_one_hybrid_v11_cpp, 28},
+    {"_sglasso_lsg_path_hybrid_v11_cpp", (DL_FUNC) &_sglasso_lsg_path_hybrid_v11_cpp, 28},
     {NULL, NULL, 0}
 };
 

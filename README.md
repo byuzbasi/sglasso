@@ -31,7 +31,36 @@ If you see a gfortran-related error, refer to the [gfortran installation
 guide](https://byuzbasi.github.io/sglasso/help/gfortran_installation_guide.html)
 to fix it.
 
-## Screening rules
+## Binary responses
+
+The development interface supports `family = "binomial"` with numeric 0/1
+responses. It uses the accelerated RcppArmadillo IRLS/proximal-Newton core,
+profiled block updates and APG fallback. The Gaussian solver is unchanged.
+
+``` r
+set.seed(19)
+x <- matrix(rnorm(240), 60, 4)
+y <- rbinom(60, 1, plogis(x[, 1]))
+fit <- sglasso(x, y, c(1, 1, 2, 2), family = "binomial",
+               lambda = c(0.3, 0.1), d = c(0, 0.5))
+predict(fit, x[1:3, , drop = FALSE], type = "response")
+```
+
+For binomial `cv.sglasso()`, preprocessing and Firth targets are fitted within
+each training fold; selection minimizes out-of-fold log-loss. Set a seed or
+supply identical folds for reproducibility. Alpha is fixed in each call.
+Automatic lambda paths are fold-local relative grids; supplying lambda fixes
+an absolute grid. An endpoint selection warns that the optimum beyond the
+finite grid is unassessed. No universal null-model lambda maximum is claimed
+for positive targets.
+
+See `help("sglasso-binomial")` for the objective, controls, convergence checks,
+preprocessing and unsupported options. These are numerical safeguards, not a
+guarantee of convergence on every possible dataset. Frozen research results
+were obtained with their recorded research implementations, not retrospectively
+with this package version.
+
+## Gaussian screening rules
 
 `sglasso()` includes optional screening rules through the `screen` argument:
 `"SSR"`, `"SSR_fast"`, and `"none"`. The SSR rule accounts for the shifted
